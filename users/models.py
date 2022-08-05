@@ -1,9 +1,10 @@
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-
-from housing.models import ResidentialComplex
+from ads.models import Announcement, AnnouncementPurpose, AnnouncementPaymentOptions
+from housing.models import ResidentialComplex, ApartmentDecoration
 from users.managers import CustomUserManager
 from django.core.mail import send_mail
 from django.db import models
@@ -53,7 +54,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=False,
         blank=True
     )
-
     date_joined = models.DateTimeField(_('date joined'), auto_now_add=True)
     notification = models.CharField(
         _('Уведомления'),
@@ -63,10 +63,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     favorites_residential_complex = models.ManyToManyField(
         ResidentialComplex,
+        related_name='favorite_complex',
         blank=True
     )
     favorites_announcement = models.ManyToManyField(
         Announcement,
+        related_name='favorite_announcement',
         blank=True
     )
 
@@ -123,7 +125,7 @@ class Contact(models.Model):
         choices=TYPES.choices,
     )
     residential_complex = models.OneToOneField(
-        ResidentialСomplex, on_delete=models.CASCADE, related_name='sales_department_contact', null=True, blank=True
+        ResidentialComplex, on_delete=models.CASCADE, related_name='sales_department_contact', null=True, blank=True
     )
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name='agent_contact', null=True, blank=True
@@ -153,24 +155,35 @@ class MessageFile(models.Model):
 
 
 class Filter(models.Model):
-    class TypeOfHousing(models.TextChoices):
-        SECONDARY = 'Вторичный рынок', _('Вторичный рынок')
-        NEW = 'Новостройки', _('Новостройки')
-        ALL = 'Все', _('Все')
-        COTTAGES = 'Коттеджи', _('Коттеджи')
-
-    status_house = models.BooleanField(default=True)
-    district = models.CharField(max_length=150)
-    microdistrict = models.CharField(max_length=150)
-    rooms = models.PositiveIntegerField()
+    status_house = models.BooleanField(_('Статус дома'), default=True)
+    district = models.CharField(_('Район'), max_length=150)
+    microdistrict = models.CharField(_('Микрорайон'), max_length=150)
+    rooms = models.PositiveIntegerField(
+        _('Количество комнат'), validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
     price_start = models.PositiveIntegerField()
     price_end = models.PositiveIntegerField()
     area_start = models.PositiveIntegerField()
     area_end = models.PositiveIntegerField()
-    type_housing = models.CharField(max_length=15, choices=TypeOfHousing.choices)
-    purpose = models.CharField()
-    payment_options = models.CharField()
-    state = models.CharField()
+    type_housing = models.CharField(_('Вид недвижимости'), max_length=20)
+    purpose = models.CharField(
+        _('Назначение'),
+        max_length=26,
+        choices=AnnouncementPurpose.choices,
+        default=AnnouncementPurpose.FLAT
+    )
+    payment_options = models.CharField(
+        _('Условия покупки'),
+        max_length=12,
+        choices=AnnouncementPaymentOptions.choices,
+        default=AnnouncementPaymentOptions.OTHER
+    )
+    state = models.CharField(
+        _('Состояние'),
+        max_length=21,
+        choices=ApartmentDecoration.choices,
+        default=ApartmentDecoration.ROUGH_FINISH
+    )
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='filter'
     )

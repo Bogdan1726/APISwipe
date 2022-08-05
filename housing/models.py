@@ -1,13 +1,10 @@
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator, MaxValueValidator
+User = settings.AUTH_USER_MODEL
 
-User = get_user_model()
-
-
-# Create your models here.
-
-# region TextChoices
+# region Residential Complex Choices
 
 
 class ResidentialComplexStatus(models.TextChoices):
@@ -29,7 +26,7 @@ class ResidentialComplexClassHouse(models.TextChoices):
 
 class ResidentialComplexTechnology(models.TextChoices):
     MONOLITH = 'Монолитный каркас с керамзитно-блочным заполнением', \
-            _('Монолитный каркас с керамзитно-блочным заполнением')
+               _('Монолитный каркас с керамзитно-блочным заполнением')
     FRAME = 'Каркасно-панельное', _('Каркасно-панельное строительство')
     MONOLITH_PANEL = 'Монолитно-панельное', _('Монолитно-панельное')
 
@@ -60,9 +57,11 @@ class ResidentialComplexWaterService(models.TextChoices):
     CENTRAL = 'Центральное', _('Центральное')
     ALTERNATIVE = 'Альтернативное', _('Альтернативное')
 
-# endregion TextChoices
+
+# endregion Residential Complex Choices
 
 
+# region models for App
 class ResidentialComplex(models.Model):
     name = models.CharField(max_length=150)
     description = models.TextField(_('Описание'))
@@ -131,3 +130,88 @@ class ResidentialComplex(models.Model):
         default=ResidentialComplexWaterService.CENTRAL
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_residential_complex')
+
+
+class RegistrationAndPayment(models.Model):
+    formalization = models.CharField(_('Оформление'), max_length=150)
+    payment_options = models.CharField(_('Варианты расчета'), max_length=150)
+    purpose = models.CharField(_('Назначение'), max_length=150)
+    contract_sum = models.CharField(_('Сумма в договоре'), max_length=150)
+    residential_complex = models.OneToOneField(
+        ResidentialComplex, on_delete=models.CASCADE, related_name='registration_and_payment'
+    )
+
+
+class ResidentialComplexBenefits(models.Model):
+    playground = models.BooleanField(default=False)
+    sportsground = models.BooleanField(default=False)
+    parking = models.BooleanField(default=False)
+    territory_protected = models.BooleanField(default=False)
+    residential_complex = models.OneToOneField(
+        ResidentialComplex, on_delete=models.CASCADE, related_name='benefits'
+    )
+
+
+class ResidentialComplexNews(models.Model):
+    title = models.CharField(max_length=150)
+    text = models.TextField()
+    date_created = models.DateField(auto_now=True)
+    residential_complex = models.ForeignKey(ResidentialComplex, on_delete=models.CASCADE, related_name='news')
+
+
+class GalleryResidentialComplex(models.Model):
+    image = models.ImageField(upload_to='images/housing/gallery/complex')
+    residential_complex = models.ForeignKey(
+        ResidentialComplex, on_delete=models.CASCADE, related_name='gallery_residential_complex'
+    )
+
+
+class Document(models.Model):
+    name = models.CharField(max_length=50)
+    file = models.FileField(upload_to='files/housing/document')
+    residential_complex = models.ForeignKey(ResidentialComplex, on_delete=models.CASCADE, related_name='document')
+
+
+# region Apartment Choices
+
+class ApartmentDecoration(models.TextChoices):
+    ROUGH_FINISH = 'Черновая', _('Черновая')
+    REPAIR_FROM_THE_DEVELOPER = 'Ремонт от застройщика', _('Ремонт от застройщика')
+    RESIDENTIAL_CONDITION = 'В жилом состоянии', _('В жилом состоянии')
+
+
+# endregion Apartment Choices
+
+
+class Apartment(models.Model):
+    plan = models.ImageField(upload_to='images/housing/apartment/plan')
+    plan_floor = models.ImageField(upload_to='images/housing/apartment/plan_floor')
+    number = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    room = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
+    area = models.DecimalField(max_digits=5, decimal_places=1, validators=[MinValueValidator(10.00)])
+    price = models.PositiveIntegerField()
+    price_to_meter = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    corpus = models.PositiveIntegerField(_('Корпус'))
+    section = models.PositiveIntegerField(_('Секция'))
+    floor = models.PositiveIntegerField(_('Этаж'))
+    riser = models.PositiveIntegerField(_('Cтояк'))
+    is_booked = models.BooleanField(default=False)
+    decoration = models.CharField(
+        max_length=21,
+        choices=ApartmentDecoration.choices,
+        default=ApartmentDecoration.ROUGH_FINISH
+    )
+    residential_complex = models.ForeignKey(ResidentialComplex, on_delete=models.CASCADE, related_name='apartment')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_apartment')
+
+    class Meta:
+        unique_together = [['corpus', 'section'], ['section', 'floor']]
+
+    def __str__(self):
+        return self.number
+
+    def save(self, *args, **kwargs):
+        self.price = round(self.price_to_meter * self.area)
+        super(Apartment, self).save(*args, **kwargs)
+
+# endregion models for App
