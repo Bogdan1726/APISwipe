@@ -1,7 +1,7 @@
 MANAGE = python manage.py
 PROJECT = swipe
 
-# Local
+# region local
 run:
 	$(MANAGE) runserver
 
@@ -13,6 +13,14 @@ migrate:
 
 superuser:
 	$(MANAGE) createsuperuser
+
+# Celery
+start_worker:
+	celery -A swipe worker -l info
+
+# endregion local
+
+
 
 # Docker
 
