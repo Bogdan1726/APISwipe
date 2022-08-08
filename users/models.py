@@ -24,7 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(_('Фамилия'), max_length=150)
     phone = PhoneNumberField(_('Телефон'), blank=True)
     email = models.EmailField(_('Email'), unique=True)
-    profile_image = models.ImageField(upload_to='images/user/profile', blank=True)
+    profile_image = models.ImageField(_('Изображение профиля'), upload_to='images/user/profile', blank=True)
 
     is_staff = models.BooleanField(
         _('staff status'),
@@ -135,9 +135,9 @@ class Contact(models.Model):
 class Notary(models.Model):
     first_name = models.CharField(_('Имя'), max_length=150)
     last_name = models.CharField(_('Фамилия'), max_length=150)
-    phone = PhoneNumberField(_('Телефон'), blank=True)
+    phone = PhoneNumberField(_('Телефон'))
     email = models.EmailField(_('Email'), unique=True)
-    profile_image = models.ImageField(upload_to='images/user/notary', blank=True)
+    profile_image = models.ImageField(_('Изображение профиля'), upload_to='images/user/notary', blank=True)
 
 
 class Message(models.Model):

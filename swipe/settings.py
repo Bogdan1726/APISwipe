@@ -69,7 +69,9 @@ REST_AUTH_SERIALIZERS = {
 }
 
 REST_USE_JWT = True
-JWT_AUTH_COOKIE = 'my-app-auth'
+JWT_AUTH_COOKIE = 'swipe-auth'
+JWT_AUTH_REFRESH_COOKIE = 'my-refresh-token'
+
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
