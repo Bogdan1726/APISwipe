@@ -16,7 +16,10 @@ superuser:
 
 # Celery
 start_worker:
-	celery -A swipe worker -l info
+	celery -A $(PROJECT) worker -l info
+
+start_beat:
+	celery -A $(PROJECT) beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
 # endregion local
 

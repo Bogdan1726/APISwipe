@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'phonenumber_field',
     'debug_toolbar',
+    'django_celery_beat',
 ]
 
 # Django REST Framework
@@ -72,7 +73,6 @@ REST_USE_JWT = True
 JWT_AUTH_COOKIE = 'swipe-auth'
 JWT_AUTH_REFRESH_COOKIE = 'my-refresh-token'
 
-
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
@@ -101,12 +101,6 @@ EMAIL_PORT = env('EMAIL_HOST_PORT')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
-
-
-# Celery
-CELERY_BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -202,3 +196,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Kiev'
+
