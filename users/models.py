@@ -24,7 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(_('Фамилия'), max_length=150)
     phone = PhoneNumberField(_('Телефон'), blank=True)
     email = models.EmailField(_('Email'), unique=True)
-    profile_image = models.ImageField(_('Изображение профиля'), upload_to='images/user/profile', blank=True)
+    profile_image = models.ImageField(_('Изображение профиля'), upload_to='images/user/profile', null=True, blank=True)
 
     is_staff = models.BooleanField(
         _('staff status'),
@@ -115,10 +115,10 @@ class Contact(models.Model):
         SALES_DEPARTMENT = 'Отдел продаж', _('Отдел продаж')
         AGENT_CONTACTS = 'Контакты агента', _('Контакты агента')
 
-    first_name = models.CharField(_('Имя'), max_length=150)
-    last_name = models.CharField(_('Фамилия'), max_length=150)
+    first_name = models.CharField(_('Имя'), max_length=150, blank=True)
+    last_name = models.CharField(_('Фамилия'), max_length=150, blank=True)
     phone = PhoneNumberField(_('Телефон'), blank=True)
-    email = models.EmailField(_('Email'), unique=True)
+    email = models.EmailField(_('Email'), blank=True)
     type = models.CharField(
         _('Вид контакта'),
         max_length=15,

@@ -3,15 +3,33 @@ from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Notary
+from .models import Notary, Subscription, Contact
 
 User = get_user_model()
 
 
-class ProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'profile_image',  'first_name', 'last_name', 'phone', 'email', 'notification', 'per_agent']
+        fields = ['id', 'profile_image', 'first_name', 'last_name', 'phone', 'email', 'notification', 'per_agent']
+
+
+class NotarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notary
+        fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'profile_image']
+
+
+class UserAgentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ['id', 'first_name', 'last_name', 'phone', 'email']
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = '__all__'
 
 
 class CustomLoginSerializer(LoginSerializer):
@@ -43,9 +61,3 @@ class CustomRegisterSerializer(RegisterSerializer):
     def save(self, request):
         user = super().save(request)
         return user
-
-
-class NotarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Notary
-        fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'profile_image']

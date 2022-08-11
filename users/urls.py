@@ -3,14 +3,17 @@ from dj_rest_auth.views import LoginView, LogoutView
 from django.urls import path
 from rest_framework.routers import SimpleRouter, DefaultRouter
 
-from users.views import NotaryViewSet, ProfileViewSet
+from users.views import NotaryViewSet, UserProfileViewSet, UserAgentViewSet, UserSubscriptionViewSet
 
 app_name = 'users'
 
-router = SimpleRouter()
-router.register('notary', NotaryViewSet),
-router.register('profile', ProfileViewSet)
+router = DefaultRouter()
+router.register('profile', UserProfileViewSet, basename='profile')
+router.register('agent', UserAgentViewSet, basename='agent')
+router.register('subscription', UserSubscriptionViewSet, basename='subscription')
+router.register('notary', NotaryViewSet)
 
+# print(router.urls)
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='rest_login'),
