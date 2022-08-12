@@ -3,7 +3,7 @@ from dj_rest_auth.views import LoginView, LogoutView
 from django.urls import path
 from rest_framework.routers import SimpleRouter, DefaultRouter
 
-from users.views import NotaryViewSet, UserProfileViewSet, UserAgentViewSet, UserSubscriptionViewSet
+from users.views import NotaryViewSet, UserProfileViewSet, UserAgentViewSet, UserSubscriptionViewSet, MessageViewSet
 
 app_name = 'users'
 
@@ -12,6 +12,7 @@ router.register('profile', UserProfileViewSet, basename='profile')
 router.register('agent', UserAgentViewSet, basename='agent')
 router.register('subscription', UserSubscriptionViewSet, basename='subscription')
 router.register('notary', NotaryViewSet)
+router.register('message', MessageViewSet, basename='message')
 
 # print(router.urls)
 

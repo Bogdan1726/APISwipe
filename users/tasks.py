@@ -4,6 +4,8 @@ from .models import Subscription
 from swipe.celery import app
 import calendar
 
+from .services.month_ahead import get_range_month
+
 
 @app.task
 def activate_user_subscription():
@@ -11,11 +13,8 @@ def activate_user_subscription():
     Renewing a user's subscription (is_auto_renewal=True)
     """
     print('task "activate_user_subscription" send')
-    date = datetime.now()
-    days_in_month = calendar.monthrange(date.year, date.month)[1]
-    date += timedelta(days=days_in_month)
     subscription = Subscription.objects.filter(is_auto_renewal=True, date_end__lt=datetime.now())
-    subscription.update(date_end=date)
+    subscription.update(date_end=get_range_month().date())
     print('task "activate_user_subscription" complete')
 
 

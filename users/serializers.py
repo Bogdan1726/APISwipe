@@ -3,9 +3,26 @@ from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Notary, Subscription, Contact
+from .models import Notary, Subscription, Contact, MessageFile, Message
+from .services.month_ahead import get_range_month
 
 User = get_user_model()
+
+
+class MessageFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MessageFile
+        fields = '__all__'
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    # message_files = MessageFileSerializer(many=True, read_only=True)
+    files = serializers.ListField(child=serializers.ImageField())
+
+    class Meta:
+        model = Message
+        fields = ['message_files', 'files', 'text', 'sender', 'recipient', 'is_feedback']
+        read_only_fields = ['recipient', 'sender', 'is_feedback']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -29,7 +46,9 @@ class UserAgentSerializer(serializers.ModelSerializer):
 class UserSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
-        fields = '__all__'
+        fields = ['id', 'date_end', 'is_active', 'is_auto_renewal', 'user']
+        read_only_fields = ['date_end', 'is_active', 'user', 'is_auto_renewal', 'id']
+
 
 
 class CustomLoginSerializer(LoginSerializer):
