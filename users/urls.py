@@ -1,9 +1,12 @@
 from dj_rest_auth.registration.views import RegisterView
 from dj_rest_auth.views import LoginView, LogoutView
 from django.urls import path
-from rest_framework.routers import SimpleRouter, DefaultRouter
-
-from users.views import NotaryViewSet, UserProfileViewSet, UserAgentViewSet, UserSubscriptionViewSet, MessageViewSet
+from rest_framework.routers import DefaultRouter
+from users.views import (
+    NotaryViewSet, UserProfileViewSet,
+    UserAgentViewSet, UserSubscriptionViewSet,
+    MessageViewSet
+)
 
 app_name = 'users'
 

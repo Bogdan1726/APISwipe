@@ -1,15 +1,17 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule, psq
 
-from .models import Notary, Contact, Subscription, Message
+from .models import Notary, Contact, Subscription, Message, MessageFile
 from .serializers import NotarySerializer, UserProfileSerializer, UserAgentSerializer, UserSubscriptionSerializer, \
-    MessageSerializer
+    MessageSerializer, MessageFileSerializer
 from .services.month_ahead import get_range_month
 
 User = get_user_model()
@@ -19,14 +21,21 @@ User = get_user_model()
 
 class MessageViewSet(mixins.CreateModelMixin,
                      mixins.ListModelMixin,
+                     mixins.RetrieveModelMixin,
                      viewsets.GenericViewSet):
     serializer_class = MessageSerializer
-    queryset = Message.objects.all()
+    parser_classes = [MultiPartParser]
 
-    def list(self, request, *args, **kwargs):
-        queryset = Message.objects.all()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        queryset = Message.objects.filter(
+            Q(sender=self.request.user) | Q(recipient=self.request.user),
+        ).distinct('sender')
+        return queryset
+
+    # def list(self, request, *args, **kwargs):
+    #     queryset = Message.objects.all()
+    #     serializer = self.serializer_class(queryset, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -34,6 +43,7 @@ class MessageViewSet(mixins.CreateModelMixin,
             serializer.save(sender=request.user, is_feedback=True)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
@@ -130,3 +140,5 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
             serializer = self.serializer_class(obj)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+

@@ -95,6 +95,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'SWIPE',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True
     # OTHER SETTINGS
 }
 
@@ -151,7 +152,7 @@ DATABASES = {
         'PASSWORD': env('DATABASE_PASS'),
         'HOST': env('HOST'),
         'PORT': env('PORT'),
-        'ATOMIC_REQUEST': True,
+        # 'ATOMIC_REQUEST': True,
     }
 }
 

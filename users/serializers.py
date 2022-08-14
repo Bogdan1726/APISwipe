@@ -10,19 +10,31 @@ User = get_user_model()
 
 
 class MessageFileSerializer(serializers.ModelSerializer):
+    objects = None
+
     class Meta:
         model = MessageFile
-        fields = '__all__'
+        fields = ['file']
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    # message_files = MessageFileSerializer(many=True, read_only=True)
-    files = serializers.ListField(child=serializers.ImageField())
+    file = serializers.ListField(child=serializers.FileField(), write_only=True)
+    message_files = MessageFileSerializer(many=True, read_only=True)
 
     class Meta:
         model = Message
-        fields = ['message_files', 'files', 'text', 'sender', 'recipient', 'is_feedback']
+        fields = ['file', 'text', 'message_files', 'sender', 'recipient', 'is_feedback']
         read_only_fields = ['recipient', 'sender', 'is_feedback']
+
+    def create(self, validated_data):
+        files = validated_data.pop('file')
+        instance = Message.objects.create(**validated_data)
+
+        # Save many-to-many relationships after the instance is created.
+        if files:
+            for file in files:
+                MessageFile.objects.create(file=file, message=instance)
+        return instance
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
