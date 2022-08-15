@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import (
     NotaryViewSet, UserProfileViewSet,
     UserAgentViewSet, UserSubscriptionViewSet,
-    MessageViewSet
+    MessageViewSet, FilterViewSet
 )
 
 app_name = 'users'
@@ -14,8 +14,10 @@ router = DefaultRouter()
 router.register('profile', UserProfileViewSet, basename='profile')
 router.register('agent', UserAgentViewSet, basename='agent')
 router.register('subscription', UserSubscriptionViewSet, basename='subscription')
-router.register('notary', NotaryViewSet)
 router.register('message', MessageViewSet, basename='message')
+router.register('filter', FilterViewSet, basename='filter')
+router.register('notary', NotaryViewSet)
+
 
 # print(router.urls)
 

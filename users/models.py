@@ -3,6 +3,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import PermissionsMixin
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
+
 from ads.models import Announcement, AnnouncementPurpose, AnnouncementPaymentOptions
 from housing.models import ResidentialComplex, ApartmentDecoration
 from users.managers import CustomUserManager
@@ -185,5 +187,7 @@ class Filter(models.Model):
         default=ApartmentDecoration.ROUGH_FINISH
     )
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='filter'
+        User, on_delete=models.CASCADE, related_name='user_filter', null=True, blank=True
     )
+
+
