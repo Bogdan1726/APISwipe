@@ -67,13 +67,13 @@ class ResidentialComplex(models.Model):
     description = models.TextField(_('Описание'))
     commissioning_date = models.DateField(auto_now_add=True)
     is_commissioning = models.BooleanField(default=True)
-    district = models.CharField(max_length=150)
-    microdistrict = models.CharField(max_length=150, blank=True)
-    street = models.CharField(max_length=150)
-    map_lat = models.DecimalField(max_digits=12, decimal_places=8)
-    map_lon = models.DecimalField(max_digits=12, decimal_places=8)
-    distance = models.PositiveIntegerField(_('Высота потолков'))
-    ceiling_height = models.FloatField()
+    address = models.CharField(max_length=150)
+    map_lat = models.DecimalField(max_digits=19, decimal_places=16)
+    map_lon = models.DecimalField(max_digits=19, decimal_places=16)
+    distance = models.PositiveIntegerField(_('Расстояние до моря'))
+    ceiling_height = models.FloatField(
+        validators=[MinValueValidator(2.0), MaxValueValidator(5.0)]
+    )
     gas = models.BooleanField(_('Газ'))
     status = models.CharField(
         _('Статус ЖК'),
