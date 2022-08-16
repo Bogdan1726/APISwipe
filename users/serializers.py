@@ -2,7 +2,6 @@ from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Notary, Subscription, Contact, MessageFile, Message, Filter
@@ -19,10 +18,22 @@ class FilterSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if data['area_start'] >= data['area_end']:
-            raise serializers.ValidationError('area_start >= area_end')
+            raise serializers.ValidationError(
+                {'error_area': 'area_start >= area_end'}
+            )
         if data['price_start'] >= data['price_end']:
-            raise serializers.ValidationError('price_start >= price_end')
+            raise serializers.ValidationError(
+                {'error_price': 'price_start >= price_end'}
+            )
         return data
+
+    def create(self, validated_data):
+        requests_user_id = self.context.get('request').user.id
+        if Filter.objects.filter(user_id=requests_user_id).count() >= 4:
+            raise serializers.ValidationError(
+                {'error_max_count_user_filter': 'The maximum count of saved filters is 4'}
+            )
+        return Filter.objects.create(**validated_data, user_id=requests_user_id)
 
 
 class MessageFileSerializer(serializers.ModelSerializer):
@@ -32,17 +43,18 @@ class MessageFileSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    file = serializers.ListField(child=serializers.FileField(), write_only=True)
+    file = serializers.ListField(child=serializers.FileField(), write_only=True, required=False)
     message_files = MessageFileSerializer(many=True, read_only=True)
 
     class Meta:
         model = Message
         fields = ['file', 'text', 'message_files', 'sender', 'recipient', 'is_feedback']
-        read_only_fields = ['sender']
+        read_only_fields = ['sender', 'message_files']
 
     def create(self, validated_data):
-        files = validated_data.pop('file')
-        instance = Message.objects.create(**validated_data)
+        print(validated_data)
+        files = validated_data.pop('file') if 'file' in validated_data else None
+        instance = Message.objects.create(**validated_data, sender=self.context.get('request').user)
         if files:
             for file in files:
                 MessageFile.objects.create(file=file, message=instance)
@@ -52,7 +64,19 @@ class MessageSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'profile_image', 'first_name', 'last_name', 'phone', 'email', 'notification', 'per_agent']
+        fields = [
+            'first_name', 'last_name', 'phone', 'email', 'profile_image',
+            'notification', 'per_agent'
+        ]
+        # read_only_fields = [
+        #     'id', 'is_staff', 'is_active', 'is_blacklist', 'is_developer',
+        #     'date_joined'
+        # ]
+
+    # def update(self, instance, validated_data):
+    #     instance.phone = validated_data.get('phone', instance.phone)
+    #     instance.save()
+    #     return instance
 
 
 class NotarySerializer(serializers.ModelSerializer):
@@ -65,6 +89,7 @@ class UserAgentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ['id', 'first_name', 'last_name', 'phone', 'email']
+        read_only_fields = ['id']
 
 
 class UserSubscriptionSerializer(serializers.ModelSerializer):

@@ -1,10 +1,8 @@
-from datetime import datetime, timedelta
+from .services.month_ahead import get_range_month
 from django.core.mail import send_mail
 from .models import Subscription
+from datetime import datetime
 from swipe.celery import app
-import calendar
-
-from .services.month_ahead import get_range_month
 
 
 @app.task
