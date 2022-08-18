@@ -3,6 +3,7 @@ from users.models import Contact
 from .models import (
     ResidentialComplex, ResidentialComplexBenefits, RegistrationAndPayment
 )
+from collections import OrderedDict
 
 
 class ResidentialComplexBenefitsSerializer(serializers.ModelSerializer):
@@ -26,37 +27,49 @@ class SalesDepartmentSerializer(serializers.ModelSerializer):
 
 
 class ResidentialComplexSerializer(serializers.ModelSerializer):
-    residential_complex_benefits = ResidentialComplexBenefitsSerializer()
-    # registration_and_payment = RegistrationAndPaymentSerializer()
-    sales_department = SalesDepartmentSerializer()
+    benefits = ResidentialComplexBenefitsSerializer()
+    registration_and_payment = RegistrationAndPaymentSerializer()
+    sales_department_contact = SalesDepartmentSerializer()
 
     class Meta:
         model = ResidentialComplex
         fields = [
-            'name', 'description', 'commissioning_date', 'is_commissioning',
+            'id', 'name', 'description', 'commissioning_date', 'is_commissioning',
             'address', 'map_lat', 'map_lon', 'distance', 'ceiling_height', 'gas',
             'status', 'type_house', 'class_house', 'technology', 'territory',
             'communal_payments', 'heating', 'sewerage', 'water_service', 'user',
-            'residential_complex_benefits', 'sales_department'
+            'sales_department_contact', 'benefits', 'registration_and_payment'
         ]
-        read_only_fields = ['user']
+        read_only_fields = ['user', 'id']
 
     def create(self, validated_data):
         requests_user_id = self.context.get('request').user.id
+        sales_department_contact_validated_data = validated_data.pop('sales_department_contact')
+        benefits_validated_data = validated_data.pop('benefits')
+        registration_and_payment_validated_data = validated_data.pop('registration_and_payment')
         instance = ResidentialComplex.objects.create(
             **validated_data, user_id=requests_user_id
         )
         ResidentialComplexBenefits.objects.create(
-            **validated_data.pop('residential_complex_benefits'),
+            **benefits_validated_data,
             residential_complex=instance
         )
-        # RegistrationAndPayment.objects.create(
-        #     **validated_data['registration_and_payment'],
-        #     residential_complex=instance
-        # )
+        RegistrationAndPayment.objects.create(
+            **registration_and_payment_validated_data,
+            residential_complex=instance
+        )
         Contact.objects.create(
-            **validated_data.pop('sales_department'),
+            **sales_department_contact_validated_data,
             residential_complex=instance,
             type='Контакты агента'
         )
         return instance
+
+    def update(self, instance, validated_data):
+        sales_department_contact_validated_data = validated_data.pop('sales_department_contact')
+        benefits_validated_data = validated_data.pop('benefits')
+        registration_and_payment_validated_data = validated_data.pop('registration_and_payment')
+        ResidentialComplexBenefits.objects.update(**benefits_validated_data)
+        RegistrationAndPayment.objects.update(**registration_and_payment_validated_data)
+        Contact.objects.update(**sales_department_contact_validated_data)
+        return super().update(instance, validated_data)

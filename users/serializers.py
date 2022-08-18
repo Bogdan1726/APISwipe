@@ -52,9 +52,9 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ['sender', 'message_files']
 
     def create(self, validated_data):
-        print(validated_data)
+        requests_user = self.context.get('request').user
         files = validated_data.pop('file') if 'file' in validated_data else None
-        instance = Message.objects.create(**validated_data, sender=self.context.get('request').user)
+        instance = Message.objects.create(**validated_data, sender=requests_user)
         if files:
             for file in files:
                 MessageFile.objects.create(file=file, message=instance)
@@ -65,18 +65,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'first_name', 'last_name', 'phone', 'email', 'profile_image',
+            'id', 'first_name', 'last_name', 'phone', 'email', 'profile_image',
             'notification', 'per_agent'
         ]
-        # read_only_fields = [
-        #     'id', 'is_staff', 'is_active', 'is_blacklist', 'is_developer',
-        #     'date_joined'
-        # ]
+        read_only_fields = [
+            'id', 'notification', 'per_agent'
+        ]
 
-    # def update(self, instance, validated_data):
-    #     instance.phone = validated_data.get('phone', instance.phone)
-    #     instance.save()
-    #     return instance
+
+class UserNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['notification']
+
+
+class UserPerAgentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['per_agent']
 
 
 class NotarySerializer(serializers.ModelSerializer):
