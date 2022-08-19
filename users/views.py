@@ -8,15 +8,16 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule, psq
+from .permissions import IsMyFilter
+from .services.month_ahead import get_range_month
 from .models import (
     Notary, Contact, Subscription, Message, Filter
 )
-from .permissions import IsMyFilter
 from .serializers import (
     NotarySerializer, UserProfileSerializer, UserAgentSerializer, UserSubscriptionSerializer,
-    MessageSerializer, FilterSerializer, UserNotificationSerializer, UserPerAgentSerializer
+    MessageSerializer, FilterSerializer, UserNotificationSerializer, UserPerAgentSerializer,
+    UserAutoRenewalSubscriptionSerializer
 )
-from .services.month_ahead import get_range_month
 
 User = get_user_model()
 
@@ -32,10 +33,18 @@ class FilterViewSet(PsqMixin, viewsets.ModelViewSet):
     }
 
     def get_queryset(self):
-        queryset = Filter.objects.filter(user=self.request.user).select_related(
-            'user'
-        )
+        queryset = Filter.objects.filter(user=self.request.user).select_related('user')
         return queryset
+
+
+class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
+    serializer_class = NotarySerializer
+    queryset = Notary.objects.all()
+
+    psq_rules = {
+        ('list', 'retrieve'): [Rule([IsAuthenticated])]
+    }
 
 
 @extend_schema(
@@ -67,16 +76,6 @@ class MessageViewSet(mixins.CreateModelMixin,
                 Q(sender_id=user_id, recipient=self.request.user)
             ).prefetch_related('message_files')
         return queryset
-
-
-class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
-    permission_classes = [IsAdminUser]
-    serializer_class = NotarySerializer
-    queryset = Notary.objects.all()
-
-    psq_rules = {
-        ('list', 'retrieve'): [Rule([IsAuthenticated])]
-    }
 
 
 class UserProfileViewSet(viewsets.ViewSet):
@@ -128,12 +127,12 @@ class UserAgentViewSet(viewsets.ViewSet):
     @extend_schema(description='Get agent data', methods=["GET"])
     @action(detail=False)
     def get_agent(self, request):
-        obj, created = Contact.objects.get_or_create(user=request.user, type='Контакты агента')
+        obj = get_object_or_404(Contact, users=request.user)
         serializer = self.serializer_class(obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Update agent data', methods=["POST"])
-    @action(detail=False, methods=['POST'])
+    @extend_schema(description='Update agent data', methods=["PUT"])
+    @action(detail=False, methods=['PUT'])
     def update_agent(self, request):
         obj = get_object_or_404(Contact, user=request.user)
         serializer = self.serializer_class(obj, data=request.data, partial=True)
@@ -146,17 +145,6 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSubscriptionSerializer
 
-    # @extend_schema(description='create subscription', methods=['POST'])
-    # @action(detail=False, methods=['POST'])
-    # def create_subscription(self, request):
-    #     obj, created = Subscription.objects.get_or_create(user=request.user)
-    #     if created:
-    #         obj.date_end = get_range_month().date()
-    #         obj.save()
-    #         serializer = self.serializer_class(obj)
-    #         return Response(serializer.data, status.HTTP_201_CREATED)
-    #     return Response(status=status.HTTP_400_BAD_REQUEST)
-
     @extend_schema(description='Get subscription', methods=['GET'])
     @action(detail=False)
     def get_subscription(self, request):
@@ -164,23 +152,50 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         serializer = self.serializer_class(obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Renew your subscription', methods=['POST'])
-    @action(detail=False, methods=['POST'])
+    @extend_schema(description='Activate not active subscription', methods=['PUT'])
+    @action(detail=False, methods=['PUT'])
+    def active_subscription(self, request):
+        obj = get_object_or_404(
+            Subscription,
+            user=request.user,
+            is_active=False
+        )
+        obj.date_end = get_range_month().date()
+        obj.is_active = True
+        obj.is_auto_renewal = True
+        serializer = self.serializer_class(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(description='Renew your subscription', methods=['PUT'])
+    @action(detail=False, methods=['PUT'])
     def update_subscription(self, request):
-        obj = get_object_or_404(Subscription, user=request.user)
+        obj = get_object_or_404(
+            Subscription,
+            user=request.user,
+            is_active=True
+        )
         obj.date_end = get_range_month(obj.date_end)
         serializer = self.serializer_class(obj, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Cancel auto-renewal', methods=['POST'])
-    @action(detail=False, methods=['POST'])
-    def off_auto_renewal_subscription(self, request):
+    @extend_schema(
+        description='Enable or disable auto-renewal of a subscription',
+        methods=['PUT']
+    )
+    @action(
+        detail=False,
+        methods=['PUT'],
+        serializer_class=UserAutoRenewalSubscriptionSerializer,
+        parser_classes=[JSONParser]
+
+    )
+    def auto_renewal_subscription(self, request):
         obj = get_object_or_404(Subscription, user=request.user)
-        if obj.is_auto_renewal:
-            obj.is_auto_renewal = False
-            obj.save()
-            serializer = self.serializer_class(obj)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.serializer_class(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

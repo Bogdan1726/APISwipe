@@ -1,6 +1,7 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 
 from .models import (
@@ -91,6 +92,28 @@ class NotarySerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'profile_image']
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Example 1",
+            value={
+                "first_name": "Test",
+                "last_name": "Test",
+                "phone": "+380939804334",
+                "email": "agent@example.com"
+            },
+        ),
+        OpenApiExample(
+            "Example 2",
+            value={
+                "first_name": "Test 2",
+                "last_name": "Test 2",
+                "phone": "0939804334",
+                "email": "agent2@example.com"
+            },
+        ),
+    ],
+)
 class UserAgentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
@@ -103,6 +126,28 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = ['id', 'date_end', 'is_active', 'is_auto_renewal', 'user']
         read_only_fields = ['date_end', 'is_active', 'user', 'is_auto_renewal', 'id']
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Enable",
+            value={
+                "is_auto_renewal": 'true'
+            },
+        ),
+        OpenApiExample(
+            "Disable",
+            value={
+                "is_auto_renewal": 'false'
+            },
+        ),
+    ],
+)
+class UserAutoRenewalSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['is_auto_renewal']
 
 
 class CustomLoginSerializer(LoginSerializer):
