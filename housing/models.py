@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
+
 User = settings.AUTH_USER_MODEL
 
 # region Residential Complex Choices
@@ -184,8 +185,8 @@ class ApartmentDecoration(models.TextChoices):
 
 
 class Apartment(models.Model):
-    plan = models.ImageField(upload_to='images/housing/apartment/plan')
-    plan_floor = models.ImageField(upload_to='images/housing/apartment/plan_floor')
+    plan = models.ImageField(upload_to='images/housing/apartment/plan', blank=True)
+    plan_floor = models.ImageField(upload_to='images/housing/apartment/plan_floor', blank=True)
     number = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     room = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
     area = models.DecimalField(max_digits=5, decimal_places=1, validators=[MinValueValidator(10.00)])
@@ -201,14 +202,13 @@ class Apartment(models.Model):
         choices=ApartmentDecoration.choices,
         default=ApartmentDecoration.ROUGH_FINISH
     )
-    residential_complex = models.ForeignKey(ResidentialComplex, on_delete=models.CASCADE, related_name='apartment')
+    residential_complex = models.ForeignKey(
+        ResidentialComplex, on_delete=models.SET_NULL, blank=True, null=True, related_name='apartment'
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_apartment')
 
-    class Meta:
-        unique_together = [['corpus', 'section'], ['section', 'floor']]
-
     def __str__(self):
-        return self.number
+        return f'{self.number}'
 
     def save(self, *args, **kwargs):
         self.price = round(self.price_to_meter * self.area)

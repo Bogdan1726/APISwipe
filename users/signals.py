@@ -10,11 +10,9 @@ User = get_user_model()
 def post_save_user(created, **kwargs):
     instance = kwargs.get('instance')
     if created:
-        if instance.is_developer:
-            create_sales_department(instance)
-        else:
+        # if instance.is_developer:
+        #     create_sales_department(instance)
+        # else:
+        if instance.is_developer is False:
             create_agent(instance)
             create_subscription(instance)
-
-
-
