@@ -172,7 +172,7 @@ class ApartmentSerializer(serializers.ModelSerializer):
             'corpus', 'section', 'floor', 'riser', 'is_booked', 'decoration',
             'residential_complex', 'id', 'price'
         ]
-        read_only_fields = ['id', 'price']
+        read_only_fields = ['id', 'price', 'is_booked']
 
     def create(self, validated_data):
         requests_user = self.context.get('request').user
