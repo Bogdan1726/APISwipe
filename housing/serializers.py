@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 from users.models import Contact
+from .services.base_64_data import get_base_64_images
 from .validators import resident_complex_validator
 from .models import (
     ResidentialComplex, ResidentialComplexBenefits, RegistrationAndPayment,
@@ -56,54 +57,53 @@ class GalleryResidentialComplexSerializer(serializers.ModelSerializer):
         fields = ['image']
 
 
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            "Example 1",
-            value={
-                "name": "Test",
-                "description": "Test",
-                "is_commissioning": 'true',
-                "address": "test",
-                "map_lat": "46.37668422515867",
-                "map_lon": "30.721478800598362",
-                "distance": 2500,
-                "ceiling_height": 2.5,
-                "gas": 'true',
-                "status": "Квартиры",
-                "type_house": "Многоквартирный",
-                "class_house": "Элитный",
-                "technology": "Монолитный каркас с керамзитно-блочным заполнением",
-                "territory": "Закрытая охраняемая",
-                "communal_payments": "Платежи",
-                "heating": "Центральное",
-                "sewerage": "Центральная",
-                "water_service": "Центральное",
-                "sales_department_contact": {
-                    "first_name": "Юля",
-                    "last_name": "Тест",
-                    "phone": "+380955554433",
-                    "email": "user@example.com"
-                },
-                "benefits": {
-                    "playground": 'true',
-                    "sportsground": 'true',
-                    "parking": 'true',
-                    "territory_protected": 'true'
-                },
-                "registration_and_payment": {
-                    "formalization": "Юстиция",
-                    "payment_options": "Ипотека",
-                    "purpose": "Жилое помещение",
-                    "contract_sum": "Неполная"
-                },
-                "image": [
-                    "string"
-                ]
-            }
-        ),
-    ],
-)
+# @extend_schema_serializer(
+#     examples=[
+#         OpenApiExample(
+#             "Example 1",
+#             value={
+#                 "name": "Test",
+#                 "description": "Test",
+#                 "is_commissioning": 'true',
+#                 "address": "test",
+#                 "map_lat": "46.37668422515867",
+#                 "map_lon": "30.721478800598362",
+#                 "distance": 2500,
+#                 "ceiling_height": 2.5,
+#                 "gas": 'true',
+#                 "status": "Квартиры",
+#                 "type_house": "Многоквартирный",
+#                 "class_house": "Элитный",
+#                 "technology": "Монолитный каркас с керамзитно-блочным заполнением",
+#                 "territory": "Закрытая охраняемая",
+#                 "communal_payments": "Платежи",
+#                 "heating": "Центральное",
+#                 "sewerage": "Центральная",
+#                 "water_service": "Центральное",
+#                 "sales_department_contact": {
+#                     "first_name": "Юля",
+#                     "last_name": "Тест",
+#                     "phone": "+380955554433",
+#                     "email": "user@example.com"
+#                 },
+#                 "benefits": {
+#                     "playground": 'true',
+#                     "sportsground": 'true',
+#                     "parking": 'true',
+#                     "territory_protected": 'true'
+#                 },
+#                 "registration_and_payment": {
+#                     "formalization": "Юстиция",
+#                     "payment_options": "Ипотека",
+#                     "purpose": "Жилое помещение",
+#                     "contract_sum": "Неполная"
+#                 },
+#                 'images_to_delete': [],
+#                 "image": get_base_64_images()
+#             }
+#         ),
+#     ],
+# )
 class ResidentialComplexSerializer(serializers.ModelSerializer):
     benefits = ResidentialComplexBenefitsSerializer()
     registration_and_payment = RegistrationAndPaymentSerializer()
@@ -161,6 +161,20 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
         ResidentialComplexBenefits.objects.update(**benefits_validated_data)
         RegistrationAndPayment.objects.update(**registration_and_payment_validated_data)
         Contact.objects.update(**sales_department_contact_validated_data)
+        return super().update(instance, validated_data)
+
+
+class ResidentialComplexUpdateSerializer(ResidentialComplexSerializer):
+    images_to_delete = serializers.ListField(child=serializers.IntegerField())
+
+    class Meta(ResidentialComplexSerializer.Meta):
+        fields = ResidentialComplexSerializer.Meta.fields + ['images_to_delete']
+
+    def update(self, instance, validated_data):
+        images_to_delete = validated_data.pop('images_to_delete')
+        print(images_to_delete)
+        if images_to_delete:
+            GalleryResidentialComplex.objects.filter(id__in=images_to_delete).delete()
         return super().update(instance, validated_data)
 
 

@@ -1,5 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -14,7 +14,7 @@ from .permissions import IsMyResidentialComplex, IsMyResidentialComplexObject, I
 from .serializers import (
     ResidentialComplexSerializer, ResidentialComplexNewsSerializer,
     ResidentialComplexDocumentSerializer, ApartmentSerializer,
-    ApartmentReservationSerializer
+    ApartmentReservationSerializer, ResidentialComplexUpdateSerializer
 )
 from .models import (
     ResidentialComplex, ResidentialComplexNews, Document, Apartment
@@ -24,6 +24,7 @@ from .models import (
 # Create your views here.
 
 
+@extend_schema(tags=['residential-complex'])
 class ResidentialComplexViewSet(PsqMixin, viewsets.ModelViewSet):
     serializer_class = ResidentialComplexSerializer
     permission_classes = [IsAuthenticated]
@@ -33,7 +34,8 @@ class ResidentialComplexViewSet(PsqMixin, viewsets.ModelViewSet):
     psq_rules = {
         ('create',): [Rule([IsAdminUser | IsDeveloper])],
         ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser]), Rule([IsMyResidentialComplex])
+            Rule([IsAdminUser], ResidentialComplexUpdateSerializer),
+            Rule([IsMyResidentialComplex], ResidentialComplexUpdateSerializer)
         ]
     }
 
@@ -48,7 +50,7 @@ class ResidentialComplexViewSet(PsqMixin, viewsets.ModelViewSet):
         )
     ]
 )
-@extend_schema(tags=['complex-news'])
+@extend_schema(tags=['residential-complex-news'])
 class ResidentialComplexNewsViewSet(PsqMixin, viewsets.ModelViewSet):
     serializer_class = ResidentialComplexNewsSerializer
     permission_classes = [IsAuthenticated]
@@ -80,7 +82,7 @@ class ResidentialComplexNewsViewSet(PsqMixin, viewsets.ModelViewSet):
         )
     ]
 )
-@extend_schema(tags=['complex-document'])
+@extend_schema(tags=['residential-complex-document'])
 class ResidentialComplexDocumentViewSet(PsqMixin, viewsets.ModelViewSet):
     serializer_class = ResidentialComplexDocumentSerializer
     permission_classes = [IsAuthenticated]
