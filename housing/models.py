@@ -162,6 +162,7 @@ class ResidentialComplexNews(models.Model):
 
 class GalleryResidentialComplex(models.Model):
     image = models.ImageField(upload_to='images/housing/gallery/complex')
+    order = models.PositiveIntegerField(null=True, blank=True)
     residential_complex = models.ForeignKey(
         ResidentialComplex, on_delete=models.CASCADE, related_name='gallery_residential_complex'
     )

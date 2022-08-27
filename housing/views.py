@@ -1,3 +1,4 @@
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
 from rest_framework import viewsets, status
@@ -8,16 +9,18 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule, psq
+from rest_framework import status, viewsets, mixins
 from users.permissions import IsDeveloper
 from .filters import ApartmentFilter
 from .permissions import IsMyResidentialComplex, IsMyResidentialComplexObject, IsMyApartment
 from .serializers import (
     ResidentialComplexSerializer, ResidentialComplexNewsSerializer,
     ResidentialComplexDocumentSerializer, ApartmentSerializer,
-    ApartmentReservationSerializer, ResidentialComplexUpdateSerializer
+    ApartmentReservationSerializer, ResidentialComplexUpdateSerializer,
+    GalleryResidentialComplexSerializer, GalleryResidentialComplexSerializer2
 )
 from .models import (
-    ResidentialComplex, ResidentialComplexNews, Document, Apartment
+    ResidentialComplex, ResidentialComplexNews, Document, Apartment, GalleryResidentialComplex
 )
 
 
@@ -34,10 +37,43 @@ class ResidentialComplexViewSet(PsqMixin, viewsets.ModelViewSet):
     psq_rules = {
         ('create',): [Rule([IsAdminUser | IsDeveloper])],
         ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser], ResidentialComplexUpdateSerializer),
-            Rule([IsMyResidentialComplex], ResidentialComplexUpdateSerializer)
+            Rule([IsAdminUser]),
+            Rule([IsMyResidentialComplex])
         ]
     }
+
+    # @action(detail=False, methods=['PUT'], serializer_class=GalleryResidentialComplexSerializer)
+    # def drag_and_drop_sort_images(self, request):
+    #     print(request.data)
+    #     self.serializer_class(data=request.data)
+    #     return Response(status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['residential-complex-gallery'])
+class ResidentialComplexGalleryViewSet(mixins.ListModelMixin,
+                                       viewsets.GenericViewSet):
+    serializer_class = GalleryResidentialComplexSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["residential_complex"]
+
+    def get_queryset(self):
+        return GalleryResidentialComplex.objects.all().order_by('order')
+
+    @action(detail=False, methods=['POST'], serializer_class=GalleryResidentialComplexSerializer2)
+    def drag_and_drop_sort_images(self, request):
+        list_pk = request.data.get('list_pk')
+        if len(list_pk) > 0:
+            for order, pk in enumerate(list_pk):
+                try:
+                    image = GalleryResidentialComplex.objects.get(id=pk)
+                    image.order = order
+                    image.save()
+                except GalleryResidentialComplex.DoesNotExist:
+                    continue
+            return Response(status=status.HTTP_200_OK)
+        return Response(status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
