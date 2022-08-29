@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = settings.AUTH_USER_MODEL
 
+
 # region Residential Complex Choices
 
 
@@ -166,6 +167,9 @@ class GalleryResidentialComplex(models.Model):
     residential_complex = models.ForeignKey(
         ResidentialComplex, on_delete=models.CASCADE, related_name='gallery_residential_complex'
     )
+
+    class Meta:
+        ordering = ('order', )
 
 
 class Document(models.Model):

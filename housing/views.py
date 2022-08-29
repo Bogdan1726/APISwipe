@@ -36,17 +36,8 @@ class ResidentialComplexViewSet(PsqMixin, viewsets.ModelViewSet):
 
     psq_rules = {
         ('create',): [Rule([IsAdminUser | IsDeveloper])],
-        ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser]),
-            Rule([IsMyResidentialComplex])
-        ]
+        ('update', ): [Rule([IsAdminUser], ResidentialComplexUpdateSerializer)]
     }
-
-    # @action(detail=False, methods=['PUT'], serializer_class=GalleryResidentialComplexSerializer)
-    # def drag_and_drop_sort_images(self, request):
-    #     print(request.data)
-    #     self.serializer_class(data=request.data)
-    #     return Response(status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['residential-complex-gallery'])

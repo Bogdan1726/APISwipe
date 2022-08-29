@@ -61,10 +61,9 @@ class GalleryResidentialComplexSerializer2(serializers.ModelSerializer):
 
 
 class GalleryResidentialComplexSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = GalleryResidentialComplex
-        fields = ['image', 'id']
+        fields = ['id', 'image']
 
 
 @extend_schema_serializer(
@@ -167,11 +166,17 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
         sales_department_contact_validated_data = validated_data.pop('sales_department_contact')
         benefits_validated_data = validated_data.pop('benefits')
         registration_and_payment_validated_data = validated_data.pop('registration_and_payment')
+        drag_and_drop_images = validated_data.pop('drag_and_drop_images')
         image = validated_data.pop('image')
         ResidentialComplexBenefits.objects.update(**benefits_validated_data)
         RegistrationAndPayment.objects.update(**registration_and_payment_validated_data)
         Contact.objects.update(**sales_department_contact_validated_data)
         images = image
+        if drag_and_drop_images:
+            for pk in drag_and_drop_images:
+                GalleryResidentialComplex.objects.filter(id=pk).update(
+                    order=drag_and_drop_images[pk]
+                )
         if images:
             for image in images:
                 GalleryResidentialComplex.objects.create(
@@ -181,18 +186,64 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Example 1",
+            value={
+                "name": "Test",
+                "description": "Test",
+                "is_commissioning": 'true',
+                "address": "test",
+                "map_lat": "46.37668422515867",
+                "map_lon": "30.721478800598362",
+                "distance": 2500,
+                "ceiling_height": 2.5,
+                "gas": 'true',
+                "status": "Квартиры",
+                "type_house": "Многоквартирный",
+                "class_house": "Элитный",
+                "technology": "Монолитный каркас с керамзитно-блочным заполнением",
+                "territory": "Закрытая охраняемая",
+                "communal_payments": "Платежи",
+                "heating": "Центральное",
+                "sewerage": "Центральная",
+                "water_service": "Центральное",
+                "sales_department_contact": {
+                    "first_name": "Юля",
+                    "last_name": "Тест",
+                    "phone": "+380955554433",
+                    "email": "user@example.com"
+                },
+                "benefits": {
+                    "playground": 'true',
+                    "sportsground": 'true',
+                    "parking": 'true',
+                    "territory_protected": 'true'
+                },
+                "registration_and_payment": {
+                    "formalization": "Юстиция",
+                    "payment_options": "Ипотека",
+                    "purpose": "Жилое помещение",
+                    "contract_sum": "Неполная"
+                },
+                'drag_and_drop_images': {
+                    '25': '1',
+                    '24': '3',
+                    '26': '2'
+                },
+                "image": [
+
+                ]
+            }
+        ),
+    ],
+)
 class ResidentialComplexUpdateSerializer(ResidentialComplexSerializer):
-    images_to_delete = serializers.ListField(child=serializers.IntegerField())
+    drag_and_drop_images = serializers.JSONField(required=False)
 
     class Meta(ResidentialComplexSerializer.Meta):
-        fields = ResidentialComplexSerializer.Meta.fields + ['images_to_delete']
-
-    def update(self, instance, validated_data):
-        images_to_delete = validated_data.pop('images_to_delete')
-        print(images_to_delete)
-        if images_to_delete:
-            GalleryResidentialComplex.objects.filter(id__in=images_to_delete).delete()
-        return super().update(instance, validated_data)
+        fields = ResidentialComplexSerializer.Meta.fields + ['drag_and_drop_images']
 
 
 class ApartmentSerializer(serializers.ModelSerializer):
