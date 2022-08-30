@@ -10,11 +10,13 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule, psq
 from rest_framework import status, viewsets, mixins
+from rest_framework.viewsets import GenericViewSet
+
 from users.permissions import IsDeveloper
 from .permissions import IsMyResidentialComplex, IsMyResidentialComplexObject, IsMyApartment
 from .serializers import (
     ResidentialComplexSerializer, ResidentialComplexNewsSerializer,
-    ResidentialComplexDocumentSerializer, ResidentialComplexUpdateSerializer,
+    ResidentialComplexDocumentSerializer,
     GalleryResidentialComplexSerializer, GalleryResidentialComplexSerializer2
 )
 from .models import (
@@ -26,43 +28,23 @@ from .models import (
 
 
 @extend_schema(tags=['residential-complex'])
-class ResidentialComplexViewSet(PsqMixin, viewsets.ModelViewSet):
+class ResidentialComplexViewSet(PsqMixin,
+                                mixins.RetrieveModelMixin,
+                                mixins.UpdateModelMixin,
+                                mixins.DestroyModelMixin,
+                                mixins.ListModelMixin,
+                                GenericViewSet):
     serializer_class = ResidentialComplexSerializer
     permission_classes = [IsAuthenticated]
     queryset = ResidentialComplex.objects.all()
     parser_classes = [JSONParser]
 
     psq_rules = {
-        ('create',): [Rule([IsAdminUser | IsDeveloper])],
-        ('update', ): [Rule([IsAdminUser], ResidentialComplexUpdateSerializer)]
+        ('update', 'partial_update', 'destroy'): [
+            Rule([IsAdminUser]),
+            Rule([IsMyResidentialComplex])
+        ]
     }
-
-
-@extend_schema(tags=['residential-complex-gallery'])
-class ResidentialComplexGalleryViewSet(mixins.ListModelMixin,
-                                       viewsets.GenericViewSet):
-    serializer_class = GalleryResidentialComplexSerializer
-    permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["residential_complex"]
-
-    def get_queryset(self):
-        return GalleryResidentialComplex.objects.all().order_by('order')
-
-    @action(detail=False, methods=['POST'], serializer_class=GalleryResidentialComplexSerializer2)
-    def drag_and_drop_sort_images(self, request):
-        list_pk = request.data.get('list_pk')
-        if len(list_pk) > 0:
-            for order, pk in enumerate(list_pk):
-                try:
-                    image = GalleryResidentialComplex.objects.get(id=pk)
-                    image.order = order
-                    image.save()
-                except GalleryResidentialComplex.DoesNotExist:
-                    continue
-            return Response(status=status.HTTP_200_OK)
-        return Response(status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
@@ -127,7 +109,6 @@ class ResidentialComplexDocumentViewSet(PsqMixin, viewsets.ModelViewSet):
             residential_complex_id=complex_id
         )
         return queryset
-
 
 # @extend_schema(tags=['apartment'])
 # class ApartmentViewSet(PsqMixin, viewsets.ModelViewSet):

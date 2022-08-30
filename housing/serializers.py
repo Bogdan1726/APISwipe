@@ -66,6 +66,20 @@ class GalleryResidentialComplexSerializer(serializers.ModelSerializer):
         fields = ['id', 'image']
 
 
+class ImageSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = GalleryResidentialComplex
+        fields = ['image', 'order']
+
+
+class ImageDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GalleryResidentialComplex
+        fields = ['id']
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -107,7 +121,13 @@ class GalleryResidentialComplexSerializer(serializers.ModelSerializer):
                     "purpose": "Жилое помещение",
                     "contract_sum": "Неполная"
                 },
-                "image": get_base_64_images()
+                'images_delete': [1],
+                "images_order": [
+                    {
+                        "id": "order",
+                    }
+                ],
+                "images": get_base_64_images()
             }
         ),
     ],
@@ -116,8 +136,12 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
     benefits = ResidentialComplexBenefitsSerializer()
     registration_and_payment = RegistrationAndPaymentSerializer()
     sales_department_contact = SalesDepartmentSerializer()
-    image = serializers.ListField(child=Base64ImageField(), required=False)
+    images = ImageSerializer(required=False, many=True, write_only=True)
+    images_delete = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    images_order = serializers.ListField(child=serializers.DictField(), write_only=True)
     gallery_residential_complex = GalleryResidentialComplexSerializer(many=True, read_only=True)
+    news = ResidentialComplexNewsSerializer(many=True, read_only=True)
+    document = ResidentialComplexDocumentSerializer(many=True, read_only=True)
 
     class Meta:
         model = ResidentialComplex
@@ -127,122 +151,33 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
             'status', 'type_house', 'class_house', 'technology', 'territory',
             'communal_payments', 'heating', 'sewerage', 'water_service', 'user',
             'sales_department_contact', 'benefits', 'registration_and_payment',
-            'gallery_residential_complex', 'image'
+            'news', 'document', 'images', 'gallery_residential_complex', 'images_delete',
+            'images_order'
         ]
         read_only_fields = ['user', 'id']
-
-    def create(self, validated_data):
-        requests_user_id = self.context.get('request').user.id
-        sales_department_contact_validated_data = validated_data.pop('sales_department_contact')
-        registration_and_payment_validated_data = validated_data.pop('registration_and_payment')
-        benefits_validated_data = validated_data.pop('benefits')
-        image = validated_data.pop('image')
-        instance = ResidentialComplex.objects.create(
-            **validated_data, user_id=requests_user_id
-        )
-        ResidentialComplexBenefits.objects.create(
-            **benefits_validated_data,
-            residential_complex=instance
-        )
-        RegistrationAndPayment.objects.create(
-            **registration_and_payment_validated_data,
-            residential_complex=instance
-        )
-        Contact.objects.create(
-            **sales_department_contact_validated_data,
-            residential_complex=instance,
-            type='Контакты агента'
-        )
-        images = image
-        if images:
-            for image in images:
-                GalleryResidentialComplex.objects.create(
-                    image=image,
-                    residential_complex=instance,
-                )
-        return instance
 
     def update(self, instance, validated_data):
         sales_department_contact_validated_data = validated_data.pop('sales_department_contact')
         benefits_validated_data = validated_data.pop('benefits')
         registration_and_payment_validated_data = validated_data.pop('registration_and_payment')
-        drag_and_drop_images = validated_data.pop('drag_and_drop_images')
-        image = validated_data.pop('image')
+        images_validated_data = validated_data.pop('images')
+        images_delete = validated_data.pop('images_delete')
+        images_order = validated_data.pop('images_order')
         ResidentialComplexBenefits.objects.update(**benefits_validated_data)
         RegistrationAndPayment.objects.update(**registration_and_payment_validated_data)
         Contact.objects.update(**sales_department_contact_validated_data)
-        images = image
-        if drag_and_drop_images:
-            for pk in drag_and_drop_images:
-                GalleryResidentialComplex.objects.filter(id=pk).update(
-                    order=drag_and_drop_images[pk]
-                )
-        if images:
-            for image in images:
+        print(images_delete)
+        print(images_order)
+        # images = image
+        # if drag_and_drop_images:
+        #     for pk in drag_and_drop_images:
+        #         GalleryResidentialComplex.objects.filter(id=pk).update(
+        #             order=drag_and_drop_images[pk]
+        #         )
+        if images_validated_data:
+            for validated_data in images_validated_data:
                 GalleryResidentialComplex.objects.create(
-                    image=image,
+                    **validated_data,
                     residential_complex=instance,
                 )
         return super().update(instance, validated_data)
-
-
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            "Example 1",
-            value={
-                "name": "Test",
-                "description": "Test",
-                "is_commissioning": 'true',
-                "address": "test",
-                "map_lat": "46.37668422515867",
-                "map_lon": "30.721478800598362",
-                "distance": 2500,
-                "ceiling_height": 2.5,
-                "gas": 'true',
-                "status": "Квартиры",
-                "type_house": "Многоквартирный",
-                "class_house": "Элитный",
-                "technology": "Монолитный каркас с керамзитно-блочным заполнением",
-                "territory": "Закрытая охраняемая",
-                "communal_payments": "Платежи",
-                "heating": "Центральное",
-                "sewerage": "Центральная",
-                "water_service": "Центральное",
-                "sales_department_contact": {
-                    "first_name": "Юля",
-                    "last_name": "Тест",
-                    "phone": "+380955554433",
-                    "email": "user@example.com"
-                },
-                "benefits": {
-                    "playground": 'true',
-                    "sportsground": 'true',
-                    "parking": 'true',
-                    "territory_protected": 'true'
-                },
-                "registration_and_payment": {
-                    "formalization": "Юстиция",
-                    "payment_options": "Ипотека",
-                    "purpose": "Жилое помещение",
-                    "contract_sum": "Неполная"
-                },
-                'drag_and_drop_images': {
-                    '25': '1',
-                    '24': '3',
-                    '26': '2'
-                },
-                "image": [
-
-                ]
-            }
-        ),
-    ],
-)
-class ResidentialComplexUpdateSerializer(ResidentialComplexSerializer):
-    drag_and_drop_images = serializers.JSONField(required=False)
-
-    class Meta(ResidentialComplexSerializer.Meta):
-        fields = ResidentialComplexSerializer.Meta.fields + ['drag_and_drop_images']
-
-

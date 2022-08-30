@@ -12,9 +12,13 @@ def get_base_64_images():
         f'{path}image1.jpg'
     ]
     base64_images = []
-    for path in paths:
-        with open(path, 'rb') as file:
+    for i in range(len(paths)):
+        with open(paths[i], 'rb') as file:
             base64_images.append(
-                base64.b64encode(file.read()),
+                {
+                    'order': i + 1,
+                    'image': base64.b64encode(file.read()),
+
+                }
             )
     return base64_images
