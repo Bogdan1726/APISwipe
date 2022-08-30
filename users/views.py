@@ -1,13 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule, psq
+from rest_framework.viewsets import GenericViewSet
+
 from .permissions import IsMyFilter
 from .services.month_ahead import get_range_month
 from .models import (
@@ -16,7 +20,7 @@ from .models import (
 from .serializers import (
     NotarySerializer, UserProfileSerializer, UserAgentSerializer, UserSubscriptionSerializer,
     MessageSerializer, FilterSerializer, UserNotificationSerializer, UserPerAgentSerializer,
-    UserAutoRenewalSubscriptionSerializer
+    UserAutoRenewalSubscriptionSerializer, UserBlackListSerializer
 )
 
 User = get_user_model()
@@ -59,7 +63,7 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
 )
 class MessageViewSet(mixins.CreateModelMixin,
                      mixins.ListModelMixin,
-                     viewsets.GenericViewSet):
+                     GenericViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
@@ -182,10 +186,7 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        description='Enable or disable auto-renewal of a subscription',
-        methods=['PUT']
-    )
+    @extend_schema(description='Enable or disable auto-renewal of a subscription', methods=['PUT'])
     @action(
         detail=False,
         methods=['PUT'],
@@ -199,3 +200,23 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserBlackListViewSet(PsqMixin,
+                           mixins.CreateModelMixin,
+                           mixins.RetrieveModelMixin,
+                           mixins.UpdateModelMixin,
+                           mixins.DestroyModelMixin,
+                           mixins.ListModelMixin,
+                           GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserBlackListSerializer
+    permission_classes = [IsAdminUser]
+    parser_classes = [JSONParser]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['is_blacklist']
+    search_fields = ['id', 'first_name', 'last_name', 'phone', 'email']
+
+    def get_queryset(self):
+        queryset = User.objects.filter(is_staff=False, is_developer=False)
+        return queryset

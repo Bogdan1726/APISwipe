@@ -14,7 +14,7 @@ class AnnouncementDocument(models.TextChoices):
 
 
 class AnnouncementPurpose(models.TextChoices):
-    APARTMENTS = 'Апартаменты', _('Апартаменты')
+    APARTMENTS = 'Дом', _('Дом')
     FLAT = 'Квартира', _('Квартира')
     COMMERCIAL = 'Коммерческие помещения', _('Коммерческие помещения')
     OFFICE = 'Офисное помещение', _('Офисное помещение')

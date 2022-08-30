@@ -11,6 +11,14 @@ class GalleryAnnouncementSerializer(serializers.ModelSerializer):
         fields = ['image']
 
 
+class GalleryAnnouncementDeleteSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+
+    class Meta:
+        model = GalleryAnnouncement
+        fields = ['id']
+
+
 class AnnouncementSerializer(serializers.ModelSerializer):
     images = serializers.ListField(
         child=serializers.ImageField(), write_only=True, required=False
@@ -58,9 +66,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
 
 class AnnouncementUpdateSerializer(AnnouncementSerializer):
-    images_to_delete = serializers.JSONField(
-        required=False, write_only=True
-    )
+    images_to_delete = GalleryAnnouncementDeleteSerializer(many=True, write_only=True, required=False)
 
     class Meta(AnnouncementSerializer.Meta):
         model = Announcement
@@ -88,5 +94,3 @@ class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
         model = Advertising
         fields = '__all__'
         read_only_fields = ['announcement', 'date_start']
-
-

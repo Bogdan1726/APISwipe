@@ -47,18 +47,12 @@ class ResidentialComplexViewSet(PsqMixin,
     }
 
 
-@extend_schema(
-    methods=['GET'],
-    parameters=[
-        OpenApiParameter(
-            name='complex_id',
-            description='Required query parameter to receive news of a specific complex',
-            required=True, type=int
-        )
-    ]
-)
 @extend_schema(tags=['residential-complex-news'])
-class ResidentialComplexNewsViewSet(PsqMixin, viewsets.ModelViewSet):
+class ResidentialComplexNewsViewSet(PsqMixin,
+                                    mixins.RetrieveModelMixin,
+                                    mixins.UpdateModelMixin,
+                                    mixins.DestroyModelMixin,
+                                    GenericViewSet):
     serializer_class = ResidentialComplexNewsSerializer
     permission_classes = [IsAuthenticated]
     queryset = ResidentialComplexNews.objects.all()
@@ -71,26 +65,13 @@ class ResidentialComplexNewsViewSet(PsqMixin, viewsets.ModelViewSet):
         ]
     }
 
-    def get_queryset(self):
-        complex_id = self.request.query_params.get('complex_id')
-        queryset = ResidentialComplexNews.objects.filter(
-            residential_complex_id=complex_id
-        )
-        return queryset
 
-
-@extend_schema(
-    methods=['GET'],
-    parameters=[
-        OpenApiParameter(
-            name='complex_id',
-            description='Required query parameter to receive documents of a specific complex',
-            required=True, type=int
-        )
-    ]
-)
 @extend_schema(tags=['residential-complex-document'])
-class ResidentialComplexDocumentViewSet(PsqMixin, viewsets.ModelViewSet):
+class ResidentialComplexDocumentViewSet(PsqMixin,
+                                        mixins.RetrieveModelMixin,
+                                        mixins.UpdateModelMixin,
+                                        mixins.DestroyModelMixin,
+                                        GenericViewSet):
     serializer_class = ResidentialComplexDocumentSerializer
     permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
@@ -102,37 +83,3 @@ class ResidentialComplexDocumentViewSet(PsqMixin, viewsets.ModelViewSet):
             Rule([IsAdminUser]), Rule([IsMyResidentialComplexObject])
         ]
     }
-
-    def get_queryset(self):
-        complex_id = self.request.query_params.get('complex_id')
-        queryset = Document.objects.filter(
-            residential_complex_id=complex_id
-        )
-        return queryset
-
-# @extend_schema(tags=['apartment'])
-# class ApartmentViewSet(PsqMixin, viewsets.ModelViewSet):
-#     serializer_class = ApartmentSerializer
-#     permission_classes = [IsAuthenticated]
-#     queryset = Apartment.objects.all()
-#     parser_classes = [MultiPartParser]
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_class = ApartmentFilter
-#
-#     psq_rules = {
-#         ('create',): [Rule([IsAdminUser | IsDeveloper])],
-#         ('update', 'partial_update', 'destroy'): [
-#             Rule([IsAdminUser]), Rule([IsMyApartment])
-#         ]
-#     }
-#
-#     @extend_schema(description='Reservation a apartment', methods=["PUT"])
-#     @action(detail=True, methods=['PUT'], serializer_class=ApartmentReservationSerializer)
-#     def reservation(self, request, pk):
-#         obj = get_object_or_404(Apartment, id=pk)
-#         serializer = self.serializer_class(
-#             obj, data=request.data, partial=True
-#         )
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_200_OK)

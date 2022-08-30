@@ -179,3 +179,10 @@ class CustomRegisterSerializer(RegisterSerializer):
     def save(self, request):
         user = super().save(request)
         return user
+
+
+class UserBlackListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'is_blacklist']
+        read_only_fields = ['id', 'first_name', 'last_name', 'phone', 'email']
