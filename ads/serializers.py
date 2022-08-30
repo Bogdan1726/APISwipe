@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from users.services.month_ahead import get_range_month
 from .models import (
     Announcement, Advertising, GalleryAnnouncement, Complaint
 )
@@ -24,9 +25,10 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             'is_active', 'count_view', 'founding_document',
             'purpose', 'rooms', 'layout', 'condition', 'heating',
             'payment_options', 'agent_commission', 'communication',
-            'creator', 'residential_complex', 'images', 'gallery_announcement'
+            'creator', 'residential_complex', 'images', 'gallery_announcement',
+            'advertising'
         ]
-        read_only_fields = ['count_view', 'is_moderation_check', 'creator']
+        read_only_fields = ['count_view', 'is_moderation_check', 'creator', 'advertising']
 
     def create(self, validated_data):
         images = validated_data.pop('images') or None
@@ -85,6 +87,6 @@ class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertising
         fields = '__all__'
-        read_only_fields = ['announcement', 'date_end', 'date_start', 'is_active']
+        read_only_fields = ['announcement', 'date_start']
 
 

@@ -3,10 +3,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
-
-from ads.models import Announcement, AnnouncementPurpose, AnnouncementPaymentOptions
-from housing.models import ResidentialComplex, ApartmentDecoration
+from ads.models import Announcement, AnnouncementPurpose, AnnouncementPaymentOptions, AnnouncementDecoration
+from housing.models import ResidentialComplex
 from users.managers import CustomUserManager
 from django.core.mail import send_mail
 from django.db import models
@@ -183,8 +181,8 @@ class Filter(models.Model):
     state = models.CharField(
         _('Состояние'),
         max_length=21,
-        choices=ApartmentDecoration.choices,
-        default=ApartmentDecoration.ROUGH_FINISH
+        choices=AnnouncementDecoration.choices,
+        default=AnnouncementDecoration.ROUGH_FINISH
     )
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='user_filter', null=True, blank=True

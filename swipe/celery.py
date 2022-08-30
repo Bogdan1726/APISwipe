@@ -17,5 +17,9 @@ app.conf.beat_schedule = {
         'task': 'users.tasks.deactivate_user_subscription',
         'schedule': crontab(minute=0, hour=0),
     },
+    'check-every-day-in-00:00-for-deactivate_adv': {
+        'task': 'ads.tasks.deactivate_announcement_advertising',
+        'schedule': crontab(minute=0, hour=0),
+    },
 }
 app.conf.timezone = 'Europe/Kiev'

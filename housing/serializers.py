@@ -5,7 +5,7 @@ from .services.base_64_data import get_base_64_images
 from .validators import resident_complex_validator
 from .models import (
     ResidentialComplex, ResidentialComplexBenefits, RegistrationAndPayment,
-    ResidentialComplexNews, Document, GalleryResidentialComplex, Apartment
+    ResidentialComplexNews, Document, GalleryResidentialComplex
 )
 
 from drf_extra_fields.fields import Base64ImageField
@@ -246,23 +246,3 @@ class ResidentialComplexUpdateSerializer(ResidentialComplexSerializer):
         fields = ResidentialComplexSerializer.Meta.fields + ['drag_and_drop_images']
 
 
-class ApartmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Apartment
-        fields = [
-            'plan', 'plan_floor', 'number', 'room', 'area', 'price_to_meter',
-            'corpus', 'section', 'floor', 'riser', 'is_booked', 'decoration',
-            'residential_complex', 'id', 'price'
-        ]
-        read_only_fields = ['id', 'price', 'is_booked']
-
-    def create(self, validated_data):
-        requests_user = self.context.get('request').user
-        instance = Apartment.objects.create(**validated_data, user=requests_user)
-        return instance
-
-
-class ApartmentReservationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Apartment
-        fields = ['is_booked']

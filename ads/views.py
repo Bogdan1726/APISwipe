@@ -1,10 +1,12 @@
-from drf_spectacular.utils import extend_schema
+from drf_psq import PsqMixin, Rule
 from rest_framework import viewsets
+from drf_spectacular.utils import extend_schema
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .serializers import AnnouncementSerializer, AnnouncementUpdateSerializer, AnnouncementComplaintSerializer, \
+from .serializers import (
+    AnnouncementSerializer, AnnouncementUpdateSerializer, AnnouncementComplaintSerializer,
     AnnouncementAdvertisingSerializer
-from drf_psq import PsqMixin, Rule
+)
 from .models import (
     Announcement, Complaint, Advertising
 )
@@ -36,7 +38,7 @@ class AnnouncementComplaintViewSet(PsqMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'retrieve', 'delete']
 
     psq_rules = {
-        ('create', ): [
+        ('create',): [
             Rule([IsAuthenticated])
         ]
     }

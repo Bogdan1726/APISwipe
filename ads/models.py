@@ -1,8 +1,9 @@
 from django.conf import settings
-from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from housing.models import ApartmentDecoration, ResidentialComplexHeating, ResidentialComplex
+from housing.models import ResidentialComplexHeating, ResidentialComplex
+from django.core.validators import MinValueValidator
+
 User = settings.AUTH_USER_MODEL
 
 
@@ -57,10 +58,17 @@ class AnnouncementCommunication(models.TextChoices):
     MESSAGE = 'Сообщение', _('Сообщение')
 
 
+class AnnouncementDecoration(models.TextChoices):
+    ROUGH_FINISH = 'Черновая', _('Черновая')
+    REPAIR_FROM_THE_DEVELOPER = 'Ремонт от застройщика', _('Ремонт от застройщика')
+    RESIDENTIAL_CONDITION = 'В жилом состоянии', _('В жилом состоянии')
+
+
 # endregion Announcement Choices
 
 
 # region models for App
+
 class Announcement(models.Model):
     address = models.CharField(_('Адрес'), max_length=250)
     description = models.TextField(_('Описание'))
@@ -102,8 +110,8 @@ class Announcement(models.Model):
     condition = models.CharField(
         _('Жилое состояние'),
         max_length=21,
-        choices=ApartmentDecoration.choices,
-        default=ApartmentDecoration.RESIDENTIAL_CONDITION
+        choices=AnnouncementDecoration.choices,
+        default=AnnouncementDecoration.RESIDENTIAL_CONDITION
     )
     heating = models.CharField(
         _('Тип отопления'),
@@ -135,6 +143,26 @@ class Announcement(models.Model):
     )
 
 
+class Apartment(models.Model):
+    plan = models.ImageField(upload_to='images/housing/apartment/plan', blank=True)
+    plan_floor = models.ImageField(upload_to='images/housing/apartment/plan_floor', blank=True)
+    number = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    price_to_meter = models.PositiveIntegerField()
+    corpus = models.PositiveIntegerField(_('Корпус'))
+    section = models.PositiveIntegerField(_('Секция'))
+    floor = models.PositiveIntegerField(_('Этаж'))
+    riser = models.PositiveIntegerField(_('Cтояк'))
+    is_booked = models.BooleanField(default=False)
+    announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE, related_name='announcement_apartment')
+
+    def __str__(self):
+        return f'{self.number}'
+
+    # def save(self, *args, **kwargs):
+    #     self.price = round(self.price_to_meter * self.area)
+    #     super(Apartment, self).save(*args, **kwargs)
+
+
 class Advertising(models.Model):
     class AdvertisingPhrase(models.TextChoices):
         PHRASE1 = 'Подарок при покупке', _('Подарок при покупке')
@@ -156,7 +184,7 @@ class Advertising(models.Model):
     is_raise = models.BooleanField(_('Поднять объявление'), default=False)
     is_turbo = models.BooleanField(_('Турбо'), default=False)
     is_active = models.BooleanField(default=True)
-    date_start = models.DateField(auto_now_add=True)
+    date_start = models.DateField(auto_now=True)
     date_end = models.DateField(null=True, blank=True)
     phrase = models.CharField(
         max_length=50,
@@ -178,6 +206,5 @@ class Complaint(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, related_name='complaint')
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='creator_complaint')
-
 
 # endregion models for App

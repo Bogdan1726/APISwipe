@@ -11,16 +11,14 @@ from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule, psq
 from rest_framework import status, viewsets, mixins
 from users.permissions import IsDeveloper
-from .filters import ApartmentFilter
 from .permissions import IsMyResidentialComplex, IsMyResidentialComplexObject, IsMyApartment
 from .serializers import (
     ResidentialComplexSerializer, ResidentialComplexNewsSerializer,
-    ResidentialComplexDocumentSerializer, ApartmentSerializer,
-    ApartmentReservationSerializer, ResidentialComplexUpdateSerializer,
+    ResidentialComplexDocumentSerializer, ResidentialComplexUpdateSerializer,
     GalleryResidentialComplexSerializer, GalleryResidentialComplexSerializer2
 )
 from .models import (
-    ResidentialComplex, ResidentialComplexNews, Document, Apartment, GalleryResidentialComplex
+    ResidentialComplex, ResidentialComplexNews, Document, GalleryResidentialComplex
 )
 
 
@@ -131,29 +129,29 @@ class ResidentialComplexDocumentViewSet(PsqMixin, viewsets.ModelViewSet):
         return queryset
 
 
-@extend_schema(tags=['apartment'])
-class ApartmentViewSet(PsqMixin, viewsets.ModelViewSet):
-    serializer_class = ApartmentSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = Apartment.objects.all()
-    parser_classes = [MultiPartParser]
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ApartmentFilter
-
-    psq_rules = {
-        ('create',): [Rule([IsAdminUser | IsDeveloper])],
-        ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser]), Rule([IsMyApartment])
-        ]
-    }
-
-    @extend_schema(description='Reservation a apartment', methods=["PUT"])
-    @action(detail=True, methods=['PUT'], serializer_class=ApartmentReservationSerializer)
-    def reservation(self, request, pk):
-        obj = get_object_or_404(Apartment, id=pk)
-        serializer = self.serializer_class(
-            obj, data=request.data, partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+# @extend_schema(tags=['apartment'])
+# class ApartmentViewSet(PsqMixin, viewsets.ModelViewSet):
+#     serializer_class = ApartmentSerializer
+#     permission_classes = [IsAuthenticated]
+#     queryset = Apartment.objects.all()
+#     parser_classes = [MultiPartParser]
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_class = ApartmentFilter
+#
+#     psq_rules = {
+#         ('create',): [Rule([IsAdminUser | IsDeveloper])],
+#         ('update', 'partial_update', 'destroy'): [
+#             Rule([IsAdminUser]), Rule([IsMyApartment])
+#         ]
+#     }
+#
+#     @extend_schema(description='Reservation a apartment', methods=["PUT"])
+#     @action(detail=True, methods=['PUT'], serializer_class=ApartmentReservationSerializer)
+#     def reservation(self, request, pk):
+#         obj = get_object_or_404(Apartment, id=pk)
+#         serializer = self.serializer_class(
+#             obj, data=request.data, partial=True
+#         )
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_200_OK)
