@@ -1,3 +1,4 @@
+from allauth.account.models import EmailAddress
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
@@ -72,6 +73,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'notification', 'per_agent'
         ]
+
+    def update(self, instance, validated_data):
+        if validated_data.get('email') != instance.email:
+            EmailAddress.objects.filter(user=instance).update(
+                email=validated_data.get('email')
+            )
+        return super().update(instance, validated_data)
 
 
 class UserNotificationSerializer(serializers.ModelSerializer):
@@ -181,7 +189,7 @@ class CustomRegisterSerializer(RegisterSerializer):
         return user
 
 
-class UserBlackListSerializer(serializers.ModelSerializer):
+class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'is_blacklist']

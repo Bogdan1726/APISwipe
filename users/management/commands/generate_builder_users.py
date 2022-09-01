@@ -1,3 +1,4 @@
+from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from faker import Faker
@@ -19,7 +20,14 @@ class Command(BaseCommand):
                     email=fake.email(),
                     is_developer=True
                 )
+
                 user.set_password('Zaqwerty123')
+                EmailAddress.objects.create(
+                    user=user,
+                    email=user.email,
+                    verified=True,
+                    primary=True
+                )
                 user.save()
             self.stdout.write('Successfully generated users')
         else:

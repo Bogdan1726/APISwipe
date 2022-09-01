@@ -1,26 +1,17 @@
-from django.db import transaction
-from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
-from rest_framework.generics import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.parsers import MultiPartParser, JSONParser
-from rest_framework.response import Response
-from drf_psq import PsqMixin, Rule, psq
-from rest_framework import status, viewsets, mixins
+from drf_psq import PsqMixin, Rule
+from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
-
 from users.permissions import IsDeveloper
-from .permissions import IsMyResidentialComplex, IsMyResidentialComplexObject, IsMyApartment
+from .permissions import IsMyResidentialComplex, IsMyResidentialComplexObject
 from .serializers import (
     ResidentialComplexSerializer, ResidentialComplexNewsSerializer,
-    ResidentialComplexDocumentSerializer,
-    GalleryResidentialComplexSerializer, GalleryResidentialComplexSerializer2
+    ResidentialComplexDocumentSerializer
 )
 from .models import (
-    ResidentialComplex, ResidentialComplexNews, Document, GalleryResidentialComplex
+    ResidentialComplex, ResidentialComplexNews, Document
 )
 
 

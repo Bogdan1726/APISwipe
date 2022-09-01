@@ -20,7 +20,7 @@ from .models import (
 from .serializers import (
     NotarySerializer, UserProfileSerializer, UserAgentSerializer, UserSubscriptionSerializer,
     MessageSerializer, FilterSerializer, UserNotificationSerializer, UserPerAgentSerializer,
-    UserAutoRenewalSubscriptionSerializer, UserBlackListSerializer
+    UserAutoRenewalSubscriptionSerializer, UserListSerializer
 )
 
 User = get_user_model()
@@ -45,6 +45,7 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     serializer_class = NotarySerializer
     queryset = Notary.objects.all()
+    parser_classes = [MultiPartParser]
 
     psq_rules = {
         ('list', 'retrieve'): [Rule([IsAuthenticated])]
@@ -202,15 +203,13 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class UserBlackListViewSet(PsqMixin,
-                           mixins.CreateModelMixin,
-                           mixins.RetrieveModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.DestroyModelMixin,
-                           mixins.ListModelMixin,
-                           GenericViewSet):
+class UserListViewSet(PsqMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.UpdateModelMixin,
+                      mixins.ListModelMixin,
+                      GenericViewSet):
     queryset = User.objects.all()
-    serializer_class = UserBlackListSerializer
+    serializer_class = UserListSerializer
     permission_classes = [IsAdminUser]
     parser_classes = [JSONParser]
     filter_backends = [DjangoFilterBackend, SearchFilter]

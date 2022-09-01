@@ -28,3 +28,5 @@ django-filter==22.1
 # Init scripts
 Faker==14.1.0
 
+
+django-allauth~=0.51.0

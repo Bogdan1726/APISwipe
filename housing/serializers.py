@@ -1,14 +1,14 @@
+from json import loads, dumps
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 from users.models import Contact
 from .services.base_64_data import get_base_64_images
 from .validators import resident_complex_validator
+from drf_extra_fields.fields import Base64ImageField
 from .models import (
     ResidentialComplex, ResidentialComplexBenefits, RegistrationAndPayment,
     ResidentialComplexNews, Document, GalleryResidentialComplex
 )
-
-from drf_extra_fields.fields import Base64ImageField
 
 
 class ResidentialComplexNewsSerializer(serializers.ModelSerializer):
@@ -51,15 +51,6 @@ class SalesDepartmentSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'phone', 'email']
 
 
-class GalleryResidentialComplexSerializer2(serializers.ModelSerializer):
-    list_pk = serializers.ListField(child=serializers.IntegerField())
-
-    class Meta:
-        model = GalleryResidentialComplex
-        fields = ['image', 'id', 'list_pk']
-        read_only_fields = ['image']
-
-
 class GalleryResidentialComplexSerializer(serializers.ModelSerializer):
     class Meta:
         model = GalleryResidentialComplex
@@ -74,10 +65,12 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = ['image', 'order']
 
 
-class ImageDeleteSerializer(serializers.ModelSerializer):
+class ImageOrderSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+
     class Meta:
         model = GalleryResidentialComplex
-        fields = ['id']
+        fields = ['id', 'order']
 
 
 @extend_schema_serializer(
@@ -121,11 +114,11 @@ class ImageDeleteSerializer(serializers.ModelSerializer):
                     "purpose": "Жилое помещение",
                     "contract_sum": "Неполная"
                 },
-                'images_delete': [1],
                 "images_order": [
                     {
-                        "id": "order",
-                    }
+                        "id": 0,
+                        "order": 0
+                    },
                 ],
                 "images": get_base_64_images()
             }
@@ -137,8 +130,7 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
     registration_and_payment = RegistrationAndPaymentSerializer()
     sales_department_contact = SalesDepartmentSerializer()
     images = ImageSerializer(required=False, many=True, write_only=True)
-    images_delete = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
-    images_order = serializers.ListField(child=serializers.DictField(), write_only=True)
+    images_order = ImageOrderSerializer(many=True, write_only=True)
     gallery_residential_complex = GalleryResidentialComplexSerializer(many=True, read_only=True)
     news = ResidentialComplexNewsSerializer(many=True, read_only=True)
     document = ResidentialComplexDocumentSerializer(many=True, read_only=True)
@@ -151,29 +143,30 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
             'status', 'type_house', 'class_house', 'technology', 'territory',
             'communal_payments', 'heating', 'sewerage', 'water_service', 'user',
             'sales_department_contact', 'benefits', 'registration_and_payment',
-            'news', 'document', 'images', 'gallery_residential_complex', 'images_delete',
+            'news', 'document', 'images', 'gallery_residential_complex',
             'images_order'
         ]
         read_only_fields = ['user', 'id']
 
     def update(self, instance, validated_data):
         sales_department_contact_validated_data = validated_data.pop('sales_department_contact')
-        benefits_validated_data = validated_data.pop('benefits')
         registration_and_payment_validated_data = validated_data.pop('registration_and_payment')
+        benefits_validated_data = validated_data.pop('benefits')
+        images_order_validate = validated_data.pop('images_order')
         images_validated_data = validated_data.pop('images')
-        images_delete = validated_data.pop('images_delete')
-        images_order = validated_data.pop('images_order')
         ResidentialComplexBenefits.objects.update(**benefits_validated_data)
         RegistrationAndPayment.objects.update(**registration_and_payment_validated_data)
         Contact.objects.update(**sales_department_contact_validated_data)
-        print(images_delete)
-        print(images_order)
-        # images = image
-        # if drag_and_drop_images:
-        #     for pk in drag_and_drop_images:
-        #         GalleryResidentialComplex.objects.filter(id=pk).update(
-        #             order=drag_and_drop_images[pk]
-        #         )
+        if images_order_validate:
+            list_images_id = []
+            for data in loads(dumps(images_order_validate)):
+                GalleryResidentialComplex.objects.filter(
+                    id=int(data['id'])
+                ).update(order=data['order'])
+                list_images_id.append(int(data['id']))
+            GalleryResidentialComplex.objects.exclude(
+                residential_complex=instance, id__in=list_images_id
+            ).delete()
         if images_validated_data:
             for validated_data in images_validated_data:
                 GalleryResidentialComplex.objects.create(
@@ -181,3 +174,4 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
                     residential_complex=instance,
                 )
         return super().update(instance, validated_data)
+

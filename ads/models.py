@@ -146,21 +146,22 @@ class Announcement(models.Model):
 class Apartment(models.Model):
     plan = models.ImageField(upload_to='images/housing/apartment/plan', blank=True)
     plan_floor = models.ImageField(upload_to='images/housing/apartment/plan_floor', blank=True)
-    number = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    number = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
     price_to_meter = models.PositiveIntegerField()
-    corpus = models.PositiveIntegerField(_('Корпус'))
-    section = models.PositiveIntegerField(_('Секция'))
-    floor = models.PositiveIntegerField(_('Этаж'))
-    riser = models.PositiveIntegerField(_('Cтояк'))
+    corpus = models.PositiveIntegerField(_('Корпус'), default=1)
+    section = models.PositiveIntegerField(_('Секция'), default=1)
+    floor = models.PositiveIntegerField(_('Этаж'), default=1)
+    riser = models.PositiveIntegerField(_('Cтояк'), default=1)
     is_booked = models.BooleanField(default=False)
     announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE, related_name='announcement_apartment')
 
     def __str__(self):
         return f'{self.number}'
 
-    # def save(self, *args, **kwargs):
-    #     self.price = round(self.price_to_meter * self.area)
-    #     super(Apartment, self).save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        print('save')
+        self.price_to_meter = round(self.announcement.price / self.announcement.area)
+        super(Apartment, self).save(*args, **kwargs)
 
 
 class Advertising(models.Model):
@@ -183,7 +184,7 @@ class Advertising(models.Model):
     is_big = models.BooleanField(_('Большое объявление'), default=False)
     is_raise = models.BooleanField(_('Поднять объявление'), default=False)
     is_turbo = models.BooleanField(_('Турбо'), default=False)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     date_start = models.DateField(auto_now=True)
     date_end = models.DateField(null=True, blank=True)
     phrase = models.CharField(

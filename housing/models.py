@@ -134,6 +134,9 @@ class ResidentialComplex(models.Model):
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_residential_complex')
 
+    class Meta:
+        ordering = ('id', )
+
 
 class RegistrationAndPayment(models.Model):
     formalization = models.CharField(_('Оформление'), max_length=150)

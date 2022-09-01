@@ -24,7 +24,7 @@ class AnnouncementViewSet(PsqMixin, viewsets.ModelViewSet):
 
     psq_rules = {
         ('update', 'destroy'): [
-            Rule([IsAuthenticated], AnnouncementUpdateSerializer)
+            Rule([IsAdminUser], AnnouncementUpdateSerializer)
         ]
     }
 

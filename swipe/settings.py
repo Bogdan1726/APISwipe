@@ -51,8 +51,13 @@ INSTALLED_APPS += [
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'dj_rest_auth.jwt_auth.JWTCookieAuthentication'
     ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
 
 }
 
@@ -76,6 +81,7 @@ REST_SESSION_LOGIN = False
 
 REST_USE_JWT = True
 JWT_AUTH_COOKIE = 'access_token'
+JWT_AUTH_REFRESH_COOKIE = 'refresh-token'
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
@@ -88,7 +94,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
-LOGIN_URL = 'rest_login'
+LOGIN_URL = '/login/'
 
 # DRF Spectacular
 SPECTACULAR_SETTINGS = {
