@@ -1,14 +1,9 @@
 from rest_framework import serializers
+
+from users.services.month_ahead import get_range_month
 from .models import (
     Announcement, Advertising, GalleryAnnouncement, Complaint
 )
-
-
-class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Advertising
-        fields = '__all__'
-        read_only_fields = ['announcement', 'date_start']
 
 
 class GalleryAnnouncementSerializer(serializers.ModelSerializer):
@@ -17,19 +12,29 @@ class GalleryAnnouncementSerializer(serializers.ModelSerializer):
         fields = ['image']
 
 
-class GalleryAnnouncementDeleteSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-
+class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GalleryAnnouncement
-        fields = ['id']
+        model = Advertising
+        fields = '__all__'
+        read_only_fields = ['announcement', 'date_start', 'is_active', 'date_end']
+
+    def update(self, instance, validated_data):
+        if instance.is_active is True:
+            raise serializers.ValidationError(
+                {
+                    'already_activated': 'Для вашего объявления уже используется продвижения!'
+                }
+            )
+        instance.date_end = get_range_month().date()
+        instance.is_active = True
+        return super().update(instance, validated_data)
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     gallery_announcement = GalleryAnnouncementSerializer(many=True, read_only=True)
     advertising = AnnouncementAdvertisingSerializer(read_only=True)
     images = serializers.ListField(
-        child=serializers.ImageField(), write_only=True, required=False
+        child=serializers.ImageField(required=True), write_only=True, required=True
     )
 
     class Meta:
@@ -44,9 +49,13 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             'advertising'
         ]
         read_only_fields = ['count_view', 'is_moderation_check', 'creator', 'advertising', 'is_active']
+        extra_kwargs = {
+            'purpose': {'required': True},
+
+        }
 
     def validate(self, data):
-        if data['purpose'] == 'Квартира' and data['residential_complex'] is None:
+        if 'purpose' in data and data['purpose'] == 'Квартира' and data['residential_complex'] is None:
             raise serializers.ValidationError(
                 {
                     'required_residential_complex': 'При выборе квартиры выбор ЖК обязателен'
@@ -72,28 +81,37 @@ class AnnouncementSerializer(serializers.ModelSerializer):
                 )
         return instance
 
-    def update(self, instance, validated_data):
-        images = validated_data.pop('images') if 'images' in validated_data else None
-        images_to_delete = validated_data.pop('images_to_delete') if 'images_to_delete' in validated_data else None
-        # images_to_delete_list = [*images_to_delete.values()]
-        # if images:
-        #     for image in images:
-        #         GalleryAnnouncement.objects.create(
-        #             image=image, announcement=instance
-        #         )
-        # if len(images_to_delete_list) > 0:
-        #     GalleryAnnouncement.objects.filter(id__in=images_to_delete_list).delete()
-        return super().update(instance, validated_data)
-
 
 class AnnouncementUpdateSerializer(AnnouncementSerializer):
-    images_to_delete = GalleryAnnouncementDeleteSerializer(
-        many=True, write_only=True, required=False
+    images_delete = serializers.ListField(
+        child=serializers.CharField(
+            required=False, allow_null=True, allow_blank=True, default=0
+        ), write_only=True, required=False, allow_empty=True
+    )
+    images = serializers.ListField(
+        child=serializers.ImageField(
+            allow_empty_file=True, write_only=True
+        ), write_only=True, required=False, allow_empty=True, allow_null=True
     )
 
     class Meta(AnnouncementSerializer.Meta):
         model = Announcement
-        fields = [*AnnouncementSerializer.Meta.fields, 'images_to_delete']
+        fields = [*AnnouncementSerializer.Meta.fields, 'images_delete']
+        read_only_fields = [*AnnouncementSerializer.Meta.read_only_fields, 'residential_complex', 'purpose']
+
+    def update(self, instance, validated_data):
+        images = validated_data.pop('images') if 'images' in validated_data else None
+        images_delete_validate = validated_data.pop('images_delete') if 'images_delete' in validated_data else None
+        if images_delete_validate:
+            images_to_delete_list = [i for i in ",".join(images_delete_validate) if i.isdigit()]
+            if len(images_to_delete_list) > 0:
+                GalleryAnnouncement.objects.filter(id__in=images_to_delete_list).delete()
+        if images:
+            for image in images:
+                GalleryAnnouncement.objects.create(
+                    image=image, announcement=instance
+                )
+        return super().update(instance, validated_data)
 
 
 class AnnouncementComplaintSerializer(serializers.ModelSerializer):
@@ -110,3 +128,9 @@ class AnnouncementComplaintSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Вы уже жаловались на это обьявление")
         instance = Complaint.objects.create(**validated_data, creator=request_user)
         return instance
+
+
+class AnnouncementModerationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = ['is_moderation_check']

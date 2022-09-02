@@ -15,5 +15,6 @@ def post_save_announcement(created, **kwargs):
         """
         Calling the save apartment method to update the price per meter
         """
-        obj = get_object_or_404(Apartment, announcement=instance)
-        obj.save()
+        if instance.purpose == 'Квартира':
+            obj = get_object_or_404(Apartment, announcement=instance)
+            obj.save()

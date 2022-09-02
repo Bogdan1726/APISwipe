@@ -78,7 +78,7 @@ class Announcement(models.Model):
     area_kitchen = models.DecimalField(
         _('Площадь кухни'), max_digits=5, decimal_places=1, validators=[MinValueValidator(0.0)]
     )
-    balcony_or_loggia = models.BooleanField(_('Балкон/лоджия'), default=True)
+    balcony_or_loggia = models.BooleanField(_('Балкон/лоджия'), default=False)
     price = models.PositiveIntegerField(_('Цена'))
     date_created = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -159,7 +159,6 @@ class Apartment(models.Model):
         return f'{self.number}'
 
     def save(self, *args, **kwargs):
-        print('save')
         self.price_to_meter = round(self.announcement.price / self.announcement.area)
         super(Apartment, self).save(*args, **kwargs)
 

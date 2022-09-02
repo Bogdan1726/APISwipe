@@ -132,7 +132,7 @@ class UserAgentViewSet(viewsets.ViewSet):
     @extend_schema(description='Get agent data', methods=["GET"])
     @action(detail=False)
     def get_agent(self, request):
-        obj = get_object_or_404(Contact, users=request.user)
+        obj = get_object_or_404(Contact, user=request.user)
         serializer = self.serializer_class(obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
