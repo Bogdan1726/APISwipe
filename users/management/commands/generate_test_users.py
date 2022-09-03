@@ -5,7 +5,7 @@ from faker import Faker
 
 User = get_user_model()
 
-fake = Faker()
+fake = Faker('ru_RU')
 
 
 class Command(BaseCommand):

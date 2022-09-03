@@ -83,7 +83,7 @@ class Announcement(models.Model):
     date_created = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_moderation_check = models.BooleanField(default=False)
-    count_view = models.PositiveIntegerField(default=0)
+    count_view = models.PositiveIntegerField(default=1)
     founding_document = models.CharField(
         _('Документ основания'),
         max_length=36,
