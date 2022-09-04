@@ -69,7 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     favorites_announcement = models.ManyToManyField(
         Announcement,
         related_name='favorite_announcement',
-        blank=True
+        blank=True,
     )
 
     objects = CustomUserManager()

@@ -5,7 +5,8 @@ from rest_framework.routers import DefaultRouter
 from users.views import (
     NotaryViewSet, UserProfileViewSet,
     UserAgentViewSet, UserSubscriptionViewSet,
-    MessageViewSet, FilterViewSet, UserListViewSet
+    MessageViewSet, FilterViewSet, UserListViewSet,
+    FavoritesAnnouncementView, FavoritesResidentialComplexView
 )
 
 app_name = 'users'
@@ -16,8 +17,11 @@ router.register('agent', UserAgentViewSet, basename='user-agent')
 router.register('subscription', UserSubscriptionViewSet, basename='user-subscription')
 router.register('message', MessageViewSet, basename='user-message')
 router.register('filter', FilterViewSet, basename='user-filter')
-router.register('userlist', UserListViewSet, basename='user-list')
+router.register('user-list', UserListViewSet, basename='user-list')
+router.register('favorites-announcement', FavoritesAnnouncementView, basename='user-favorites-announcement')
+router.register('favorites-residential-complex', FavoritesResidentialComplexView, basename='user-favorites-complex')
 router.register('notary', NotaryViewSet, basename='notary')
+
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='rest_login'),

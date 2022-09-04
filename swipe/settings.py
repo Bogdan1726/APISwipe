@@ -159,7 +159,7 @@ DATABASES = {
         'PASSWORD': env('DATABASE_PASS'),
         'HOST': env('HOST'),
         'PORT': env('PORT'),
-        # 'ATOMIC_REQUEST': True,
+        'ATOMIC_REQUEST': True,
     }
 }
 
