@@ -1,9 +1,11 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
 from users.services.month_ahead import get_range_month
 from .models import (
     Announcement, Advertising, GalleryAnnouncement, Complaint
 )
+
+User = get_user_model()
 
 
 class GalleryAnnouncementSerializer(serializers.ModelSerializer):
@@ -134,3 +136,36 @@ class AnnouncementModerationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ['is_moderation_check']
+
+
+class FavoritesAnnouncementSerializer(serializers.ModelSerializer):
+    gallery_announcement = GalleryAnnouncementSerializer(
+        many=True, read_only=True
+    )
+
+    class Meta:
+        model = Announcement
+        fields = ['id', 'address', 'description', 'price', 'date_created', 'gallery_announcement']
+
+
+class UserFavoritesAnnouncementSerializer(serializers.ModelSerializer):
+    favorites_announcement = FavoritesAnnouncementSerializer(
+        many=True, read_only=True
+    )
+
+    class Meta:
+        model = User
+        fields = ['id', 'favorites_announcement']
+
+    def create(self, validated_data):
+        announcement_id = self.context.get('request').query_params.get('announcement_id')
+        request_user = self.context.get('request').user
+        if announcement_id:
+            if not Announcement.objects.filter(id=announcement_id).exists():
+                raise serializers.ValidationError(
+                    {
+                        'error_announcement': 'Нет такого объявления'
+                    }
+                )
+            request_user.favorites_announcement.add(announcement_id)
+        return request_user

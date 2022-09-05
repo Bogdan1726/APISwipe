@@ -1,7 +1,8 @@
+from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_psq import PsqMixin, Rule
 from rest_framework import viewsets, mixins, status
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, JSONParser
@@ -11,14 +12,18 @@ from rest_framework.viewsets import GenericViewSet
 from .permissions import IsMyAnnouncement, IsMyAdvertising
 from .serializers import (
     AnnouncementSerializer, AnnouncementUpdateSerializer, AnnouncementComplaintSerializer,
-    AnnouncementAdvertisingSerializer, AnnouncementModerationSerializer
+    AnnouncementAdvertisingSerializer, AnnouncementModerationSerializer,
+    UserFavoritesAnnouncementSerializer
 )
 from .models import (
     Announcement, Complaint, Advertising
 )
 
+User = get_user_model()
+
 
 # Create your views here.
+
 
 @extend_schema(tags=['announcement'])
 class AnnouncementViewSet(PsqMixin, viewsets.ModelViewSet):
@@ -90,14 +95,44 @@ class AnnouncementAdvertisingViewSet(PsqMixin,
         ]
     }
 
-# class AnnouncementModerationViewSet(mixins.RetrieveModelMixin,
-#                                     mixins.UpdateModelMixin,
-#                                     mixins.ListModelMixin,
-#                                     GenericViewSet):
-#     serializer_class = AnnouncementAdvertisingSerializer
-#     permission_classes = [IsAdminUser]
-#     parser_classes = [JSONParser]
-#
-#     def get_queryset(self):
-#         queryset = Announcement.objects.filter(is_moderation_check=False)
-#         return queryset
+
+@extend_schema(tags=['announcement-favorites'])
+@extend_schema(
+    methods=['POST', "DELETE"],
+    parameters=[
+        OpenApiParameter(
+            name='announcement_id',
+            description='Required query parameter to announcement or remove an ad to favorites',
+            required=True, type=int
+        )
+    ]
+)
+class FavoritesAnnouncementViewSet(mixins.CreateModelMixin,
+                                   GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserFavoritesAnnouncementSerializer
+    queryset = User.objects.all()
+
+    @extend_schema(description='Get favorites apartments', methods=["GET"])
+    @action(detail=False)
+    def get(self, request):
+        serializer = self.serializer_class(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_201_CREATED)
+
+    @extend_schema(description='Deleted apartments from favorites', methods=['DELETE'])
+    @action(detail=False, methods=['DELETE'])
+    def delete(self, request):
+        announcement_id = request.query_params.get('announcement_id')
+        if Announcement.objects.filter(id=announcement_id).exists():
+            obj = get_object_or_404(Announcement, id=announcement_id)
+            request.user.favorites_announcement.remove(obj)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)

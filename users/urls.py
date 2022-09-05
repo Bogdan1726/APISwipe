@@ -5,8 +5,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import (
     NotaryViewSet, UserProfileViewSet,
     UserAgentViewSet, UserSubscriptionViewSet,
-    MessageViewSet, FilterViewSet, UserListViewSet,
-    FavoritesAnnouncementView, FavoritesResidentialComplexView
+    MessageViewSet, FilterViewSet, UserListViewSet
 )
 
 app_name = 'users'
@@ -18,8 +17,6 @@ router.register('subscription', UserSubscriptionViewSet, basename='user-subscrip
 router.register('message', MessageViewSet, basename='user-message')
 router.register('filter', FilterViewSet, basename='user-filter')
 router.register('user-list', UserListViewSet, basename='user-list')
-router.register('favorites-announcement', FavoritesAnnouncementView, basename='user-favorites-announcement')
-router.register('favorites-residential-complex', FavoritesResidentialComplexView, basename='user-favorites-complex')
 router.register('notary', NotaryViewSet, basename='notary')
 
 

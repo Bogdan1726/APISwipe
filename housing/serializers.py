@@ -1,4 +1,6 @@
 from json import loads, dumps
+
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 from users.models import Contact
@@ -9,6 +11,8 @@ from .models import (
     ResidentialComplex, ResidentialComplexBenefits, RegistrationAndPayment,
     ResidentialComplexNews, Document, GalleryResidentialComplex
 )
+
+User = get_user_model()
 
 
 class ResidentialComplexNewsSerializer(serializers.ModelSerializer):
@@ -175,3 +179,35 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
                 )
         return super().update(instance, validated_data)
 
+
+class FavoritesResidentialComplexSerializer(serializers.ModelSerializer):
+    gallery_residential_complex = GalleryResidentialComplexSerializer(
+        many=True, read_only=True
+    )
+
+    class Meta:
+        model = ResidentialComplex
+        fields = ['id', 'name', 'address', 'gallery_residential_complex']
+
+
+class UserFavoritesResidentialComplexSerializer(serializers.ModelSerializer):
+    favorites_residential_complex = FavoritesResidentialComplexSerializer(
+        many=True, read_only=True
+    )
+
+    class Meta:
+        model = User
+        fields = ['favorites_residential_complex']
+
+    def create(self, validated_data):
+        residential_complex_id = self.context.get('request').query_params.get('residential_complex_id')
+        request_user = self.context.get('request').user
+        if residential_complex_id:
+            if not ResidentialComplex.objects.filter(id=residential_complex_id).exists():
+                raise serializers.ValidationError(
+                    {
+                        'error_announcement': 'Нет такого ЖК'
+                    }
+                )
+            request_user.favorites_residential_complex.add(residential_complex_id)
+        return request_user

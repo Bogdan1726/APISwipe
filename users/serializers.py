@@ -4,9 +4,6 @@ from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
-
-from ads.models import Announcement
-from housing.models import ResidentialComplex
 from .models import (
     Notary, Subscription, Contact, MessageFile, Message, Filter
 )
@@ -56,9 +53,10 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ['sender', 'message_files']
 
     def create(self, validated_data):
-        requests_user = self.context.get('request').user
         files = validated_data.pop('file') if 'file' in validated_data else None
-        instance = Message.objects.create(**validated_data, sender=requests_user)
+        instance = Message.objects.create(
+            **validated_data, sender=self.context.get('request').user
+        )
         if files:
             for file in files:
                 MessageFile.objects.create(file=file, message=instance)
@@ -198,60 +196,3 @@ class UserListSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'first_name', 'last_name', 'phone', 'email']
 
 
-class UserAnnouncementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Announcement
-        fields = ['id', 'address', 'description', 'price', 'date_created']
-        read_only_fields = ['address', 'description', 'price', 'date_created']
-
-
-class UserFavoritesAnnouncementSerializer(serializers.ModelSerializer):
-    favorites_announcement = UserAnnouncementSerializer(
-        many=True, read_only=True
-    )
-
-    class Meta:
-        model = User
-        fields = ['id', 'favorites_announcement']
-
-    def create(self, validated_data):
-        announcement_id = self.context.get('request').query_params.get('announcement_id')
-        request_user = self.context.get('request').user
-        if announcement_id:
-            if not Announcement.objects.filter(id=announcement_id).exists():
-                raise serializers.ValidationError(
-                    {
-                        'error_announcement': 'Нет такого объявления'
-                    }
-                )
-            request_user.favorites_announcement.add(announcement_id)
-        return request_user
-
-
-class UserResidentialComplexSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ResidentialComplex
-        fields = ['id', 'name', 'address']
-
-
-class UserFavoritesResidentialComplexSerializer(serializers.ModelSerializer):
-    favorites_residential_complex = UserResidentialComplexSerializer(
-        many=True, read_only=True
-    )
-
-    class Meta:
-        model = User
-        fields = ['id', 'favorites_residential_complex']
-
-    def create(self, validated_data):
-        residential_complex_id = self.context.get('request').query_params.get('residential_complex_id')
-        request_user = self.context.get('request').user
-        if residential_complex_id:
-            if not ResidentialComplex.objects.filter(id=residential_complex_id).exists():
-                raise serializers.ValidationError(
-                    {
-                        'error_announcement': 'Нет такого ЖК'
-                    }
-                )
-            request_user.favorites_residential_complex.add(residential_complex_id)
-        return request_user
