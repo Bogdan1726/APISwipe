@@ -9,20 +9,45 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+
+from housing.models import ResidentialComplex
+from .filters import ApartmentFilter
 from .permissions import IsMyAnnouncement, IsMyAdvertising
 from .serializers import (
     AnnouncementSerializer, AnnouncementUpdateSerializer, AnnouncementComplaintSerializer,
     AnnouncementAdvertisingSerializer, AnnouncementModerationSerializer,
-    UserFavoritesAnnouncementSerializer
+    UserFavoritesAnnouncementSerializer, AnnouncementListSerializer, ResidentialComplexListSerializer,
+    ApartmentListSerializer
 )
 from .models import (
-    Announcement, Complaint, Advertising
+    Announcement, Complaint, Advertising, Apartment
 )
 
 User = get_user_model()
 
 
 # Create your views here.
+
+@extend_schema(tags=['announcement-feed'])
+class ApartmentListView(mixins.ListModelMixin,
+                        GenericViewSet):
+    queryset = Apartment.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = ApartmentListSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ApartmentFilter
+
+    def get_queryset(self):
+        queryset = self.queryset.filter(is_booked=True)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
 
 
 @extend_schema(tags=['announcement'])
