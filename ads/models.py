@@ -142,6 +142,9 @@ class Announcement(models.Model):
         null=True, blank=True, related_name='residential_complex_announcement'
     )
 
+    class Meta:
+        ordering = ('date_created',)
+
 
 class Apartment(models.Model):
     plan = models.ImageField(upload_to='images/housing/apartment/plan', blank=True)

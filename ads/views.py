@@ -4,6 +4,7 @@ from drf_psq import PsqMixin, Rule
 from rest_framework import viewsets, mixins, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -11,13 +12,13 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from housing.models import ResidentialComplex
-from .filters import ApartmentFilter
-from .permissions import IsMyAnnouncement, IsMyAdvertising
+from .filters import AnnouncementFilter, ApartmentFilter
+from .permissions import IsMyAnnouncement, IsMyAdvertising, IsMyApartment
 from .serializers import (
     AnnouncementSerializer, AnnouncementUpdateSerializer, AnnouncementComplaintSerializer,
     AnnouncementAdvertisingSerializer, AnnouncementModerationSerializer,
     UserFavoritesAnnouncementSerializer, AnnouncementListSerializer, ResidentialComplexListSerializer,
-    ApartmentListSerializer
+    ApartmentSerializer, ApartmentUpdateSerializer,
 )
 from .models import (
     Announcement, Complaint, Advertising, Apartment
@@ -28,36 +29,36 @@ User = get_user_model()
 
 # Create your views here.
 
-@extend_schema(tags=['announcement-feed'])
-class ApartmentListView(mixins.ListModelMixin,
-                        GenericViewSet):
+@extend_schema(tags=['apartment'])
+class ApartmentViewSet(PsqMixin,
+                       mixins.RetrieveModelMixin,
+                       mixins.UpdateModelMixin,
+                       mixins.ListModelMixin,
+                       GenericViewSet):
     queryset = Apartment.objects.all()
     permission_classes = [IsAuthenticated]
-    serializer_class = ApartmentListSerializer
+    parser_classes = [MultiPartParser]
+    serializer_class = ApartmentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ApartmentFilter
 
-    def get_queryset(self):
-        queryset = self.queryset.filter(is_booked=True)
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
+    psq_rules = {
+        ('update', 'partial_update'): [
+            Rule([IsMyApartment], ApartmentUpdateSerializer),
+            Rule([IsAdminUser], ApartmentUpdateSerializer)
+        ]
+    }
 
 
 @extend_schema(tags=['announcement'])
 class AnnouncementViewSet(PsqMixin, viewsets.ModelViewSet):
     queryset = Announcement.objects.all()
-    serializer_class = AnnouncementSerializer
+    serializer_class = AnnouncementListSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_moderation_check']
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = AnnouncementFilter
+    search_fields = ['address']
     http_method_names = ['get', 'post', 'put', 'retrieve', 'delete']
 
     psq_rules = {
@@ -66,6 +67,20 @@ class AnnouncementViewSet(PsqMixin, viewsets.ModelViewSet):
             Rule([IsMyAnnouncement], AnnouncementUpdateSerializer)
         ]
     }
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        residential_complex_queryset = (
+            ResidentialComplex.objects.all()
+        )
+        residential_complex_serializer = ResidentialComplexListSerializer(
+            residential_complex_queryset, many=True
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'data': serializer.data,
+            'residential_complex_data': residential_complex_serializer.data
+        })
 
     @extend_schema(description='Confirm ads (check by moderator)', methods=['PUT'])
     @action(

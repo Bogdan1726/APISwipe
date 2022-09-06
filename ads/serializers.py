@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
 from housing.models import ResidentialComplex
 from housing.serializers import GalleryResidentialComplexSerializer
 from users.services.month_ahead import get_range_month
@@ -33,39 +32,6 @@ class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
         instance.date_end = get_range_month().date()
         instance.is_active = True
         return super().update(instance, validated_data)
-
-
-class ResidentialComplexListSerializer(serializers.ModelSerializer):
-    gallery_residential_complex = GalleryResidentialComplexSerializer(
-        read_only=True, many=True
-    )
-
-    class Meta:
-        model = ResidentialComplex
-        fields = ['name', 'address', 'gallery_residential_complex']
-
-
-class AnnouncementListSerializer(serializers.ModelSerializer):
-    gallery_announcement = GalleryAnnouncementSerializer(many=True, read_only=True)
-    advertising = AnnouncementAdvertisingSerializer(read_only=True)
-
-    class Meta:
-        model = Announcement
-        fields = [
-            'id', 'date_created', 'address', 'area', 'price',
-            'is_moderation_check', 'is_active', 'purpose', 'rooms',
-            'gallery_announcement', 'advertising'
-        ]
-
-
-class ApartmentListSerializer(serializers.ModelSerializer):
-    announcement = AnnouncementListSerializer(
-        read_only=True
-    )
-
-    class Meta:
-        model = Apartment
-        fields = ['id', 'floor', 'announcement']
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
@@ -118,6 +84,54 @@ class AnnouncementSerializer(serializers.ModelSerializer):
                     image=image, announcement=instance
                 )
         return instance
+
+
+class ResidentialComplexListSerializer(serializers.ModelSerializer):
+    gallery_residential_complex = GalleryResidentialComplexSerializer(
+        read_only=True, many=True
+    )
+
+    class Meta:
+        model = ResidentialComplex
+        fields = ['name', 'address', 'gallery_residential_complex']
+
+
+class ApartmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Apartment
+        fields = [
+            'id', 'plan', 'plan_floor', 'number', 'price_to_meter',
+            'corpus', 'section', 'floor', 'riser', 'is_booked',
+            'announcement'
+        ]
+
+
+class ApartmentUpdateSerializer(ApartmentSerializer):
+    class Meta(ApartmentSerializer.Meta):
+        model = Apartment
+        read_only_fields = ['announcement', 'price_to_meter']
+
+
+class ApartmentListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Apartment
+        fields = ['id', 'is_booked', 'floor']
+
+
+class AnnouncementListSerializer(serializers.ModelSerializer):
+    announcement_apartment = ApartmentListSerializer(read_only=True)
+    advertising = AnnouncementAdvertisingSerializer(read_only=True)
+    gallery_announcement = GalleryAnnouncementSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Announcement
+        fields = [
+            'id', 'address', 'area', 'price', 'is_moderation_check',
+            'purpose', 'rooms', 'payment_options', 'residential_complex',
+            'gallery_announcement', 'advertising', 'announcement_apartment',
+            'condition', 'favorite_announcement'
+        ]
 
 
 class AnnouncementUpdateSerializer(AnnouncementSerializer):
