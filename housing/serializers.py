@@ -3,6 +3,8 @@ from json import loads, dumps
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
+
+from ads.models import Announcement, Apartment
 from users.models import Contact
 from .services.base_64_data import get_base_64_images
 from .validators import resident_complex_validator
@@ -77,6 +79,20 @@ class ImageOrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'order']
 
 
+class ApartmentComplexSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Apartment
+        fields = ['id', 'corpus', 'is_booked']
+
+
+class AnnouncementComplexSerializer(serializers.ModelSerializer):
+    announcement_apartment = ApartmentComplexSerializer(read_only=True)
+
+    class Meta:
+        model = Announcement
+        fields = ['announcement_apartment']
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -138,6 +154,9 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
     gallery_residential_complex = GalleryResidentialComplexSerializer(many=True, read_only=True)
     news = ResidentialComplexNewsSerializer(many=True, read_only=True)
     document = ResidentialComplexDocumentSerializer(many=True, read_only=True)
+    residential_complex_announcement = AnnouncementComplexSerializer(
+        read_only=True, many=True
+    )
 
     class Meta:
         model = ResidentialComplex
@@ -148,7 +167,7 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
             'communal_payments', 'heating', 'sewerage', 'water_service', 'user',
             'sales_department_contact', 'benefits', 'registration_and_payment',
             'news', 'document', 'images', 'gallery_residential_complex',
-            'images_order'
+            'images_order', 'residential_complex_announcement'
         ]
         read_only_fields = ['user', 'id']
 

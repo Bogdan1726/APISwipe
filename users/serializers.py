@@ -14,7 +14,11 @@ User = get_user_model()
 class FilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Filter
-        fields = '__all__'
+        fields = [
+            'id', 'status_house', 'district', 'microdistrict', 'rooms',
+            'price_start', 'price_end', 'area_start', 'area_end',
+            'type_housing', 'purpose', 'payment_options', 'state',
+        ]
         read_only_fields = ['user']
 
     def validate(self, data):
@@ -194,5 +198,3 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'is_blacklist']
         read_only_fields = ['id', 'first_name', 'last_name', 'phone', 'email']
-
-

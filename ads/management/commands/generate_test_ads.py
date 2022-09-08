@@ -18,7 +18,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not Announcement.objects.all().exists():
             if self.user_list and self.residential_complex:
-                for _ in range(5):
+                for _ in range(25):
                     Announcement.objects.create(
                         address=fake.address(), description='Тестовое объявление', area=round(uniform(40, 100), 1),
                         area_kitchen=round(uniform(5, 20), 1), price=randint(20000, 60000), is_moderation_check=True,
@@ -26,12 +26,13 @@ class Command(BaseCommand):
                     Announcement.objects.create(
                         address=fake.address(), description='Тестовое объявление', area=round(uniform(40, 100), 1),
                         area_kitchen=round(uniform(5, 20), 1), price=randint(20000, 60000), is_moderation_check=True,
-                        creator_id=choice(self.user_list), purpose='Дом')
-                self.stdout.write('Successfully generated ads')
+                        creator_id=choice(self.user_list),
+                        purpose=choice(['Дом', 'Коммерческие помещения', 'Офисное помещение']))
+                self.stdout.write(self.style.SUCCESS('Successfully generated announcements'))
             else:
                 self.stdout.write(
                     'Insufficient data to run the command to start run '
                     '"generate_test_users and and generate_builder_users.py"'
                 )
         else:
-            self.stdout.write('Test ads have already been generated before')
+            self.stdout.write('Announcements have already been generated before')

@@ -11,7 +11,6 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule
 from rest_framework.viewsets import GenericViewSet
-from housing.models import ResidentialComplex
 from .permissions import IsMyFilter
 from .services.month_ahead import get_range_month
 from .models import (
@@ -29,12 +28,20 @@ User = get_user_model()
 
 # Create your views here.
 
-class FilterViewSet(PsqMixin, viewsets.ModelViewSet):
+class FilterViewSet(PsqMixin,
+                    mixins.CreateModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,
+                    mixins.ListModelMixin,
+                    GenericViewSet
+                    ):
     serializer_class = FilterSerializer
-    permission_classes = [IsAuthenticated, IsMyFilter]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    http_method_names = ['get', 'post', 'put']
 
     psq_rules = {
-        ('create',): [Rule([IsAuthenticated])]
+        ('update', 'retrieve'): [Rule([IsMyFilter])]
     }
 
     def get_queryset(self):
@@ -47,6 +54,7 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
     serializer_class = NotarySerializer
     queryset = Notary.objects.all()
     parser_classes = [MultiPartParser]
+    http_method_names = ['get', 'post', 'put', 'delete']
 
     psq_rules = {
         ('list', 'retrieve'): [Rule([IsAuthenticated])]
@@ -129,6 +137,7 @@ class UserProfileViewSet(viewsets.ViewSet):
 class UserAgentViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserAgentSerializer
+    parser_classes = [MultiPartParser]
 
     @extend_schema(description='Get agent data', methods=["GET"])
     @action(detail=False)
@@ -216,9 +225,8 @@ class UserListViewSet(PsqMixin,
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['is_blacklist']
     search_fields = ['id', 'first_name', 'last_name', 'phone', 'email']
+    http_method_names = ['get', 'post', 'put']
 
     def get_queryset(self):
         queryset = User.objects.filter(is_staff=False, is_developer=False)
         return queryset
-
-

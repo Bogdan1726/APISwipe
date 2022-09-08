@@ -19,8 +19,12 @@ class GalleryAnnouncementSerializer(serializers.ModelSerializer):
 class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertising
-        fields = '__all__'
-        read_only_fields = ['announcement', 'date_start', 'is_active', 'date_end']
+        fields = [
+            'add_phrase', 'add_color', 'is_big', 'is_raise',
+            'is_turbo', 'is_active', 'phrase', 'color',
+            'date_start', 'date_end'
+        ]
+        read_only_fields = ['date_start', 'is_active', 'date_end']
 
     def update(self, instance, validated_data):
         if instance.is_active is True:
@@ -87,17 +91,14 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
 
 class ResidentialComplexListSerializer(serializers.ModelSerializer):
-    gallery_residential_complex = GalleryResidentialComplexSerializer(
-        read_only=True, many=True
-    )
+    preview_image = serializers.ImageField()
 
     class Meta:
         model = ResidentialComplex
-        fields = ['name', 'address', 'gallery_residential_complex']
+        fields = ['id', 'preview_image', 'name', 'address', 'favorite_complex']
 
 
 class ApartmentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Apartment
         fields = [
@@ -122,15 +123,39 @@ class ApartmentListSerializer(serializers.ModelSerializer):
 class AnnouncementListSerializer(serializers.ModelSerializer):
     announcement_apartment = ApartmentListSerializer(read_only=True)
     advertising = AnnouncementAdvertisingSerializer(read_only=True)
+    preview_image = serializers.ImageField()
+
+    class Meta:
+        model = Announcement
+        fields = [
+            'id', 'preview_image', 'address', 'area', 'price',
+            'is_moderation_check', 'purpose', 'rooms',
+            'payment_options', 'condition', 'residential_complex',
+            'advertising', 'announcement_apartment', 'favorite_announcement'
+        ]
+
+
+class AnnouncementModerationSerializer(serializers.ModelSerializer):
+    preview_image = serializers.ImageField(read_only=True)
     gallery_announcement = GalleryAnnouncementSerializer(many=True, read_only=True)
 
     class Meta:
         model = Announcement
         fields = [
-            'id', 'address', 'area', 'price', 'is_moderation_check',
-            'purpose', 'rooms', 'payment_options', 'residential_complex',
-            'gallery_announcement', 'advertising', 'announcement_apartment',
-            'condition', 'favorite_announcement'
+            'id', 'preview_image', 'address', 'description', 'area',
+            'area_kitchen', 'balcony_or_loggia', 'price', 'is_moderation_check',
+            'is_active', 'count_view', 'founding_document',
+            'purpose', 'rooms', 'layout', 'condition', 'heating',
+            'payment_options', 'agent_commission', 'communication',
+            'creator', 'gallery_announcement'
+        ]
+        read_only_fields = [
+            'id', 'preview_image', 'address', 'description', 'area',
+            'area_kitchen', 'balcony_or_loggia', 'price',
+            'is_active', 'count_view', 'founding_document',
+            'purpose', 'rooms', 'layout', 'condition', 'heating',
+            'payment_options', 'agent_commission', 'communication',
+            'creator', 'gallery_announcement'
         ]
 
 
@@ -180,12 +205,6 @@ class AnnouncementComplaintSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Вы уже жаловались на это обьявление")
         instance = Complaint.objects.create(**validated_data, creator=request_user)
         return instance
-
-
-class AnnouncementModerationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Announcement
-        fields = ['is_moderation_check']
 
 
 class FavoritesAnnouncementSerializer(serializers.ModelSerializer):

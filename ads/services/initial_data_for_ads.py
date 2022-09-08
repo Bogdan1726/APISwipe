@@ -7,5 +7,5 @@ def create_data_for_ads(instance):
     )
     if instance.purpose == 'Квартира' and instance.is_moderation_check is True:
         Apartment.objects.create(
-            announcement=instance,
+            announcement=instance, number=instance.id
         )

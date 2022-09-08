@@ -6,15 +6,13 @@ from .models import Announcement, Apartment
 class AnnouncementFilter(filters.FilterSet):
     price = filters.RangeFilter()
     area = filters.RangeFilter()
-    favorite_announcement = filters.BooleanFilter()
 
     class Meta:
         model = Announcement
         fields = [
-            'is_moderation_check', 'price', 'area',
+            'price', 'area',
             'residential_complex__is_commissioning',
             'purpose', 'rooms', 'condition', 'payment_options',
-            'favorite_announcement'
         ]
 
 

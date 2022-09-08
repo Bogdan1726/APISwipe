@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Min
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -28,16 +29,22 @@ User = get_user_model()
 class ResidentialComplexViewSet(PsqMixin,
                                 mixins.RetrieveModelMixin,
                                 mixins.UpdateModelMixin,
-                                mixins.DestroyModelMixin,
-                                mixins.ListModelMixin,
                                 GenericViewSet):
     serializer_class = ResidentialComplexSerializer
     permission_classes = [IsAuthenticated]
-    queryset = ResidentialComplex.objects.all()
     parser_classes = [JSONParser]
 
+    def get_queryset(self):
+        return ResidentialComplex.objects.prefetch_related(
+            'news', 'gallery_residential_complex', 'document',
+            'residential_complex_announcement',
+            'residential_complex_announcement__announcement_apartment'
+        ).annotate(
+            min_price=Min('residential_complex_announcement__price')
+        )
+
     psq_rules = {
-        ('update', 'partial_update', 'destroy'): [
+        ('update', 'partial_update'): [
             Rule([IsAdminUser]),
             Rule([IsMyResidentialComplex])
         ]
@@ -46,6 +53,7 @@ class ResidentialComplexViewSet(PsqMixin,
 
 @extend_schema(tags=['residential-complex-news'])
 class ResidentialComplexNewsViewSet(PsqMixin,
+                                    mixins.CreateModelMixin,
                                     mixins.RetrieveModelMixin,
                                     mixins.UpdateModelMixin,
                                     mixins.DestroyModelMixin,
@@ -65,6 +73,7 @@ class ResidentialComplexNewsViewSet(PsqMixin,
 
 @extend_schema(tags=['residential-complex-document'])
 class ResidentialComplexDocumentViewSet(PsqMixin,
+                                        mixins.CreateModelMixin,
                                         mixins.RetrieveModelMixin,
                                         mixins.UpdateModelMixin,
                                         mixins.DestroyModelMixin,
