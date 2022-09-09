@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from ads.views import (
     AnnouncementViewSet, AnnouncementComplaintViewSet,
     AnnouncementAdvertisingViewSet, FavoritesAnnouncementViewSet,
-    ApartmentViewSet, AnnouncementModerationViewSet
+    ApartmentViewSet, AnnouncementModerationViewSet, AnnouncementListViewSet
 )
 
 app_name = 'ads'
@@ -11,6 +11,7 @@ app_name = 'ads'
 router = DefaultRouter()
 router.register('apartment', ApartmentViewSet, basename='apartment')
 router.register('announcement', AnnouncementViewSet, basename='announcement'),
+router.register('announcement-feed', AnnouncementListViewSet, basename='announcement-feed')
 router.register('announcement-complaint', AnnouncementComplaintViewSet, basename='announcement-complaint')
 router.register('announcement-advertising', AnnouncementAdvertisingViewSet, basename='announcement-advertising')
 router.register('announcement-favorites', FavoritesAnnouncementViewSet, basename='announcement-favorites')

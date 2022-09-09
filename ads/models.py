@@ -150,7 +150,6 @@ class Announcement(models.Model):
         obj = self.gallery_announcement.first()
         if obj:
             return obj.image
-        return None
 
 
 class Apartment(models.Model):
@@ -158,10 +157,10 @@ class Apartment(models.Model):
     plan_floor = models.ImageField(upload_to='images/housing/apartment/plan_floor', blank=True)
     number = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     price_to_meter = models.PositiveIntegerField()
-    corpus = models.PositiveIntegerField(_('Корпус'), default=1)
-    section = models.PositiveIntegerField(_('Секция'), default=1)
-    floor = models.PositiveIntegerField(_('Этаж'), default=1)
-    riser = models.PositiveIntegerField(_('Cтояк'), default=1)
+    corpus = models.PositiveIntegerField(_('Корпус'), default=1, validators=[MinValueValidator(1)])
+    section = models.PositiveIntegerField(_('Секция'), default=1, validators=[MinValueValidator(1)])
+    floor = models.PositiveIntegerField(_('Этаж'), default=1, validators=[MinValueValidator(1)])
+    riser = models.PositiveIntegerField(_('Cтояк'), default=1, validators=[MinValueValidator(1)])
     is_booked = models.BooleanField(default=False)
     announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE, related_name='announcement_apartment')
 
@@ -215,6 +214,9 @@ class GalleryAnnouncement(models.Model):
     announcement = models.ForeignKey(
         Announcement, on_delete=models.CASCADE, related_name='gallery_announcement'
     )
+
+    class Meta:
+        ordering = ('id',)
 
 
 class Complaint(models.Model):

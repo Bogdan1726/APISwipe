@@ -89,13 +89,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
                 )
         return instance
 
-
-class ResidentialComplexListSerializer(serializers.ModelSerializer):
-    preview_image = serializers.ImageField()
-
-    class Meta:
-        model = ResidentialComplex
-        fields = ['id', 'preview_image', 'name', 'address', 'favorite_complex']
+#########
 
 
 class ApartmentSerializer(serializers.ModelSerializer):
@@ -106,18 +100,48 @@ class ApartmentSerializer(serializers.ModelSerializer):
             'corpus', 'section', 'floor', 'riser', 'is_booked',
             'announcement'
         ]
+        read_only_fields = [
+            'price_to_meter', 'announcement'
+        ]
 
-
-class ApartmentUpdateSerializer(ApartmentSerializer):
-    class Meta(ApartmentSerializer.Meta):
-        model = Apartment
-        read_only_fields = ['announcement', 'price_to_meter']
+    def validate(self, data):
+        errors = []
+        residential_complex = self.instance.announcement.residential_complex
+        if 'corpus' in data and data['corpus'] > residential_complex.corpus:
+            errors.append({'corpus_error': f"В жилом комплексе нет {data['corpus']}-го корпуса"})
+        if 'section' in data and data['section'] > residential_complex.section:
+            errors.append({'section_error': f"В жилом комплексе нет {data['section']}-й секции"})
+        if 'floor' in data and data['floor'] > residential_complex.floor:
+            errors.append({'floor_error': f"В жилом комплексе нет {data['floor']}-го этажа"})
+        if 'riser' in data and data['riser'] > residential_complex.riser:
+            errors.append({'riser_error': f"В жилом комплексе нет {data['riser']}-го стояка"})
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
 
 
 class ApartmentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
         fields = ['id', 'is_booked', 'floor']
+
+
+class CreatorSerializers(serializers.ModelSerializer):
+    profile_image = serializers.ImageField()
+
+    class Meta:
+        model = User
+        fields = [
+            'first_name', 'phone', 'profile_image'
+        ]
+
+
+class ResidentialComplexListSerializer(serializers.ModelSerializer):
+    preview_image = serializers.ImageField()
+
+    class Meta:
+        model = ResidentialComplex
+        fields = ['id', 'preview_image', 'name', 'address', 'favorite_complex']
 
 
 class AnnouncementListSerializer(serializers.ModelSerializer):
@@ -129,34 +153,39 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = [
             'id', 'preview_image', 'address', 'area', 'price',
-            'is_moderation_check', 'purpose', 'rooms',
-            'payment_options', 'condition', 'residential_complex',
-            'advertising', 'announcement_apartment', 'favorite_announcement'
+            'rooms', 'creator', 'advertising', 'announcement_apartment',
+            'favorite_announcement'
         ]
 
 
-class AnnouncementModerationSerializer(serializers.ModelSerializer):
-    preview_image = serializers.ImageField(read_only=True)
+class AnnouncementRetrieveSerializer(AnnouncementListSerializer):
+    creator = CreatorSerializers(read_only=True)
     gallery_announcement = GalleryAnnouncementSerializer(many=True, read_only=True)
 
-    class Meta:
+    class Meta(AnnouncementListSerializer.Meta):
         model = Announcement
         fields = [
-            'id', 'preview_image', 'address', 'description', 'area',
-            'area_kitchen', 'balcony_or_loggia', 'price', 'is_moderation_check',
-            'is_active', 'count_view', 'founding_document',
-            'purpose', 'rooms', 'layout', 'condition', 'heating',
-            'payment_options', 'agent_commission', 'communication',
-            'creator', 'gallery_announcement'
-        ]
+                     'payment_options', 'condition', 'residential_complex', 'condition',
+                     'is_moderation_check', 'purpose', 'balcony_or_loggia', 'area_kitchen',
+                     'description', 'heating', 'payment_options', 'agent_commission', 'layout',
+                     'founding_document', 'communication', 'gallery_announcement'
+                 ] + AnnouncementListSerializer.Meta.fields
+
+
+class AnnouncementModerationSerializer(AnnouncementListSerializer):
+    preview_image = serializers.ImageField(read_only=True)
+
+    class Meta(AnnouncementListSerializer.Meta):
+        model = Announcement
+        fields = ['is_moderation_check', ] + AnnouncementListSerializer.Meta.fields
         read_only_fields = [
-            'id', 'preview_image', 'address', 'description', 'area',
-            'area_kitchen', 'balcony_or_loggia', 'price',
-            'is_active', 'count_view', 'founding_document',
-            'purpose', 'rooms', 'layout', 'condition', 'heating',
-            'payment_options', 'agent_commission', 'communication',
-            'creator', 'gallery_announcement'
+            'id', 'preview_image', 'address', 'area', 'price',
+            'rooms', 'creator', 'advertising', 'announcement_apartment',
+            'favorite_announcement'
         ]
+
+
+#########
 
 
 class AnnouncementUpdateSerializer(AnnouncementSerializer):

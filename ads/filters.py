@@ -10,7 +10,7 @@ class AnnouncementFilter(filters.FilterSet):
     class Meta:
         model = Announcement
         fields = [
-            'price', 'area',
+            'price', 'area', 'creator',
             'residential_complex__is_commissioning',
             'purpose', 'rooms', 'condition', 'payment_options',
         ]

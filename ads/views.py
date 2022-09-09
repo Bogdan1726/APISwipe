@@ -10,13 +10,15 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from housing.models import ResidentialComplex
+from users.models import Filter
+from users.serializers import FilterSerializer
 from .filters import AnnouncementFilter, ApartmentFilter
 from .permissions import IsMyAnnouncement, IsMyAdvertising, IsMyApartment
 from .serializers import (
     AnnouncementSerializer, AnnouncementUpdateSerializer, AnnouncementComplaintSerializer,
     AnnouncementAdvertisingSerializer, AnnouncementModerationSerializer,
     UserFavoritesAnnouncementSerializer, AnnouncementListSerializer, ResidentialComplexListSerializer,
-    ApartmentSerializer, ApartmentUpdateSerializer,
+    ApartmentSerializer, AnnouncementRetrieveSerializer,
 )
 from .models import (
     Announcement, Complaint, Advertising, Apartment
@@ -27,61 +29,19 @@ User = get_user_model()
 
 # Create your views here.
 
-@extend_schema(tags=['apartment'])
-@extend_schema(
-    methods=['GET'],
-    parameters=[
-        OpenApiParameter(
-            name='announcement__residential_complex',
-            description='Required query parameter (id residential complex) to get a list of apartments in '
-                        'this residential complex',
-            required=True, type=int
-        )
-    ]
-)
-class ApartmentViewSet(PsqMixin,
-                       mixins.RetrieveModelMixin,
-                       mixins.UpdateModelMixin,
-                       mixins.ListModelMixin,
-                       GenericViewSet):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser]
-    serializer_class = ApartmentSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ApartmentFilter
-
-    psq_rules = {
-        ('update', 'partial_update'): [
-            Rule([IsMyApartment], ApartmentUpdateSerializer),
-            Rule([IsAdminUser], ApartmentUpdateSerializer)
-        ]
-    }
-
-    def get_queryset(self):
-        announcement__residential_complex = self.request.query_params.get('announcement__residential_complex')
-        if announcement__residential_complex:
-            queryset = Apartment.objects.filter(
-                announcement__residential_complex=announcement__residential_complex
-            )
-            return queryset
-        return Apartment.objects.all()
-
-
-@extend_schema(tags=['announcement'])
-class AnnouncementViewSet(PsqMixin, viewsets.ModelViewSet):
+@extend_schema(tags=['announcement-feed'])
+class AnnouncementListViewSet(PsqMixin,
+                              mixins.RetrieveModelMixin,
+                              mixins.ListModelMixin,
+                              GenericViewSet):
     serializer_class = AnnouncementListSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser]
     filter_backends = [DjangoFilterBackend]
     filterset_class = AnnouncementFilter
-    http_method_names = ['get', 'post', 'put', 'delete']
+    queryset = Announcement.objects.all()
 
     psq_rules = {
-        ('create',): [Rule([IsAuthenticated], AnnouncementSerializer)],
-        ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser], AnnouncementUpdateSerializer),
-            Rule([IsMyAnnouncement], AnnouncementUpdateSerializer)
-        ]
+        ('retrieve',): [Rule([IsAuthenticated], AnnouncementRetrieveSerializer)]
     }
 
     def get_queryset(self):
@@ -100,14 +60,39 @@ class AnnouncementViewSet(PsqMixin, viewsets.ModelViewSet):
             residential_complex_queryset, many=True
         )
         serializer = self.get_serializer(queryset, many=True)
-        return Response(
-            data=serializer.data + residential_complex_serializer.data, status=status.HTTP_200_OK
+        print(Filter.objects.filter(user=request.user))
+        return Response({
+            'data': serializer.data + residential_complex_serializer.data,
+            'filters': FilterSerializer(
+                Filter.objects.filter(user=request.user), many=True, read_only=True
+            ).data
+        },
+            status=status.HTTP_200_OK
         )
 
 
+@extend_schema(tags=['announcement'])
+class AnnouncementViewSet(PsqMixin,
+                          mixins.CreateModelMixin,
+                          mixins.UpdateModelMixin,
+                          mixins.DestroyModelMixin,
+                          GenericViewSet):
+    serializer_class = AnnouncementSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    queryset = Announcement.objects.all()
+    http_method_names = ['post', 'put', 'delete']
+
+    psq_rules = {
+        ('update', 'partial_update', 'destroy'): [
+            Rule([IsAdminUser], AnnouncementUpdateSerializer),
+            Rule([IsMyAnnouncement], AnnouncementUpdateSerializer)
+        ]
+    }
+
+
 @extend_schema(tags=['announcement-moderation'])
-class AnnouncementModerationViewSet(mixins.RetrieveModelMixin,
-                                    mixins.UpdateModelMixin,
+class AnnouncementModerationViewSet(mixins.UpdateModelMixin,
                                     mixins.ListModelMixin,
                                     GenericViewSet):
     serializer_class = AnnouncementModerationSerializer
@@ -115,9 +100,9 @@ class AnnouncementModerationViewSet(mixins.RetrieveModelMixin,
     http_method_names = ['get', 'put']
 
     def get_queryset(self):
-        return Announcement.objects.filter(is_moderation_check=True).prefetch_related(
-            'gallery_announcement'
-        )
+        return Announcement.objects.filter(is_moderation_check=False).select_related(
+            'advertising', 'announcement_apartment'
+        ).prefetch_related('favorite_announcement', 'gallery_announcement').order_by('id')
 
 
 @extend_schema(tags=['announcement-complaint'])
@@ -199,3 +184,43 @@ class FavoritesAnnouncementViewSet(mixins.CreateModelMixin,
             request.user.favorites_announcement.remove(obj)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=['apartment'])
+@extend_schema(
+    methods=['GET'],
+    parameters=[
+        OpenApiParameter(
+            name='announcement__residential_complex',
+            description='Required query parameter (id residential complex) to get a list of apartments in '
+                        'this residential complex',
+            required=True, type=int
+        )
+    ]
+)
+class ApartmentViewSet(PsqMixin,
+                       mixins.RetrieveModelMixin,
+                       mixins.UpdateModelMixin,
+                       mixins.ListModelMixin,
+                       GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    serializer_class = ApartmentSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ApartmentFilter
+
+    psq_rules = {
+        ('update', 'partial_update'): [
+            Rule([IsMyApartment]),
+            Rule([IsAdminUser])
+        ]
+    }
+
+    def get_queryset(self):
+        announcement__residential_complex = self.request.query_params.get('announcement__residential_complex')
+        if announcement__residential_complex:
+            queryset = Apartment.objects.filter(
+                announcement__residential_complex=announcement__residential_complex
+            )
+            return queryset
+        return Apartment.objects.all()
