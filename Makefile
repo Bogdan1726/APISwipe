@@ -14,6 +14,9 @@ migrate:
 superuser:
 	$(MANAGE) createsuperuser
 
+test:
+	$(MANAGE) test
+
 # Celery
 start_worker:
 	celery -A $(PROJECT) worker -l info
