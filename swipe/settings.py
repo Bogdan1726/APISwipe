@@ -154,14 +154,26 @@ INTERNAL_IPS = [
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': env('DATABASE_NAME'),
+#         'USER': env('DATABASE_USER'),
+#         'PASSWORD': env('DATABASE_PASS'),
+#         'HOST': env('HOST'),
+#         'PORT': env('PORT'),
+#         'ATOMIC_REQUEST': True,
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env('DATABASE_NAME'),
-        'USER': env('DATABASE_USER'),
-        'PASSWORD': env('DATABASE_PASS'),
-        'HOST': env('HOST'),
-        'PORT': env('PORT'),
+        'NAME': env('DATABASE_NAME_PROD'),
+        'USER': env('DATABASE_USER_PROD'),
+        'PASSWORD': env('DATABASE_PASS_PROD'),
+        'HOST': env('HOST_PROD'),
+        'PORT': env('PORT_PROD'),
         'ATOMIC_REQUEST': True,
     }
 }
@@ -201,6 +213,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Media Files
 MEDIA_URL = '/media/'
@@ -212,8 +225,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery
-CELERY_BROKER_URL = 'redis://localhost:6379/'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/'
+CELERY_BROKER_URL = 'redis://redis:6379/'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
