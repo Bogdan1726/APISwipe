@@ -1,9 +1,7 @@
 from json import loads, dumps
-
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
-
 from ads.models import Announcement, Apartment
 from users.models import Contact
 from .services.base_64_data import get_base_64_images
@@ -82,7 +80,7 @@ class ImageOrderSerializer(serializers.ModelSerializer):
 class ApartmentComplexSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
-        fields = ['id', 'corpus', 'is_booked']
+        fields = ['id', 'corpus', 'is_booked', 'price_to_meter']
 
 
 class AnnouncementComplexSerializer(serializers.ModelSerializer):
@@ -90,7 +88,15 @@ class AnnouncementComplexSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = ['announcement_apartment']
+        fields = ['announcement_apartment', 'area', 'price']
+
+
+class UserIsBuilderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id', 'first_name', 'last_name', 'phone', 'email', 'profile_image',
+        ]
 
 
 @extend_schema_serializer(
@@ -149,6 +155,7 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
     benefits = ResidentialComplexBenefitsSerializer()
     registration_and_payment = RegistrationAndPaymentSerializer()
     sales_department_contact = SalesDepartmentSerializer()
+    user = UserIsBuilderSerializer(read_only=True)
     images = ImageSerializer(required=False, many=True, write_only=True)
     images_order = ImageOrderSerializer(many=True, write_only=True)
     gallery_residential_complex = GalleryResidentialComplexSerializer(many=True, read_only=True)
@@ -190,12 +197,15 @@ class ResidentialComplexSerializer(serializers.ModelSerializer):
             GalleryResidentialComplex.objects.exclude(
                 residential_complex=instance, id__in=list_images_id
             ).delete()
+        else:
+            GalleryResidentialComplex.objects.filter(residential_complex=instance).delete()
         if images_validated_data:
-            for validated_data in images_validated_data:
+            for valid_data in images_validated_data:
                 GalleryResidentialComplex.objects.create(
-                    **validated_data,
+                    **valid_data,
                     residential_complex=instance,
                 )
+
         return super().update(instance, validated_data)
 
 

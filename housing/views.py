@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Min
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -33,22 +32,28 @@ class ResidentialComplexViewSet(PsqMixin,
     serializer_class = ResidentialComplexSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser]
+    http_method_names = ['get', 'post', 'put']
 
     def get_queryset(self):
         return ResidentialComplex.objects.prefetch_related(
             'news', 'gallery_residential_complex', 'document',
             'residential_complex_announcement',
             'residential_complex_announcement__announcement_apartment'
-        ).annotate(
-            min_price=Min('residential_complex_announcement__price')
         )
 
     psq_rules = {
         ('update', 'partial_update'): [
             Rule([IsAdminUser]),
-            Rule([IsMyResidentialComplex])
+            Rule([IsAuthenticated, IsMyResidentialComplex])
         ]
     }
+
+    @extend_schema(description='get my residential complex', methods=["GET"])
+    @action(detail=False, permission_classes=[IsMyResidentialComplex])
+    def get_my_complex(self, request):
+        obj = get_object_or_404(ResidentialComplex, user=request.user)
+        serializer = self.serializer_class(obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['residential-complex-news'])
@@ -62,11 +67,12 @@ class ResidentialComplexNewsViewSet(PsqMixin,
     permission_classes = [IsAuthenticated]
     queryset = ResidentialComplexNews.objects.all()
     parser_classes = [MultiPartParser]
+    http_method_names = ['get', 'post', 'put', 'delete']
 
     psq_rules = {
         ('create',): [Rule([IsAdminUser | IsDeveloper])],
         ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser]), Rule([IsMyResidentialComplexObject])
+            Rule([IsAdminUser]), Rule([IsAuthenticated, IsMyResidentialComplexObject])
         ]
     }
 
@@ -82,11 +88,12 @@ class ResidentialComplexDocumentViewSet(PsqMixin,
     permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
     parser_classes = [MultiPartParser]
+    http_method_names = ['get', 'post', 'put', 'delete']
 
     psq_rules = {
         ('create',): [Rule([IsAdminUser | IsDeveloper])],
         ('update', 'partial_update', 'destroy'): [
-            Rule([IsAdminUser]), Rule([IsMyResidentialComplexObject])
+            Rule([IsAdminUser]), Rule([IsAuthenticated, IsMyResidentialComplexObject])
         ]
     }
 
@@ -108,7 +115,7 @@ class FavoritesResidentialComplexViewSet(mixins.CreateModelMixin,
     serializer_class = UserFavoritesResidentialComplexSerializer
     queryset = User.objects.all()
 
-    @extend_schema(description='Get user data', methods=["GET"])
+    @extend_schema(description='Get residential complex favorites', methods=["GET"])
     @action(detail=False)
     def get(self, request):
         serializer = self.serializer_class(request.user)
@@ -122,7 +129,7 @@ class FavoritesResidentialComplexViewSet(mixins.CreateModelMixin,
         serializer.save()
         return Response(status=status.HTTP_201_CREATED)
 
-    @extend_schema(description='Get user data', methods=['DELETE'])
+    @extend_schema(description='delete residential complex favorites', methods=['DELETE'])
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
         residential_complex_id = request.query_params.get('residential_complex_id')

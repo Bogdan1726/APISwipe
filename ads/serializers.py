@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from housing.models import ResidentialComplex
-from housing.serializers import GalleryResidentialComplexSerializer
 from users.services.month_ahead import get_range_month
 from .models import (
     Announcement, Advertising, GalleryAnnouncement, Complaint, Apartment
@@ -20,7 +19,7 @@ class AnnouncementAdvertisingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertising
         fields = [
-            'add_phrase', 'add_color', 'is_big', 'is_raise',
+            'id', 'add_phrase', 'add_color', 'is_big', 'is_raise',
             'is_turbo', 'is_active', 'phrase', 'color',
             'date_start', 'date_end'
         ]
@@ -63,12 +62,20 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        if 'purpose' in data and data['purpose'] == 'Квартира' and data['residential_complex'] is None:
-            raise serializers.ValidationError(
-                {
-                    'required_residential_complex': 'При выборе квартиры выбор ЖК обязателен'
-                }
-            )
+        if 'purpose' in data and data['purpose'] == 'Квартира':
+            try:
+                if data['residential_complex'] is None:
+                    raise serializers.ValidationError(
+                        {
+                            'required_residential_complex': 'При выборе квартиры выбор ЖК обязателен'
+                        }
+                    )
+            except KeyError:
+                raise serializers.ValidationError(
+                    {
+                        'required_residential_complex': 'При выборе квартиры выбор ЖК обязателен'
+                    }
+                )
         if data['area_kitchen'] >= data['area']:
             raise serializers.ValidationError(
                 {
@@ -88,8 +95,6 @@ class AnnouncementSerializer(serializers.ModelSerializer):
                     image=image, announcement=instance
                 )
         return instance
-
-#########
 
 
 class ApartmentSerializer(serializers.ModelSerializer):
@@ -183,9 +188,6 @@ class AnnouncementModerationSerializer(AnnouncementListSerializer):
             'rooms', 'creator', 'advertising', 'announcement_apartment',
             'favorite_announcement'
         ]
-
-
-#########
 
 
 class AnnouncementUpdateSerializer(AnnouncementSerializer):
