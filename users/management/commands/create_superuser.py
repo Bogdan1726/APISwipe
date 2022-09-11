@@ -17,7 +17,8 @@ class Command(BaseCommand):
                 first_name='Admin',
                 last_name='Admin',
                 email='admin@admin.com',
-                is_superuser=True
+                is_superuser=True,
+                is_staff=True
             )
             super_user.set_password('Zaqwerty123')
             EmailAddress.objects.create(
