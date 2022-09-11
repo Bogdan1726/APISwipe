@@ -1,9 +1,9 @@
+from allauth.account.models import EmailAddress
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
-
 from .models import (
     Notary, Subscription, Contact, MessageFile, Message, Filter
 )
@@ -14,7 +14,11 @@ User = get_user_model()
 class FilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Filter
-        fields = '__all__'
+        fields = [
+            'id', 'status_house', 'district', 'microdistrict', 'rooms',
+            'price_start', 'price_end', 'area_start', 'area_end',
+            'type_housing', 'purpose', 'payment_options', 'state',
+        ]
         read_only_fields = ['user']
 
     def validate(self, data):
@@ -53,9 +57,10 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ['sender', 'message_files']
 
     def create(self, validated_data):
-        requests_user = self.context.get('request').user
         files = validated_data.pop('file') if 'file' in validated_data else None
-        instance = Message.objects.create(**validated_data, sender=requests_user)
+        instance = Message.objects.create(
+            **validated_data, sender=self.context.get('request').user
+        )
         if files:
             for file in files:
                 MessageFile.objects.create(file=file, message=instance)
@@ -72,6 +77,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'notification', 'per_agent'
         ]
+
+    def update(self, instance, validated_data):
+        if validated_data.get('email') != instance.email:
+            EmailAddress.objects.filter(user=instance).update(
+                email=validated_data.get('email')
+            )
+        return super().update(instance, validated_data)
 
 
 class UserNotificationSerializer(serializers.ModelSerializer):
@@ -181,7 +193,7 @@ class CustomRegisterSerializer(RegisterSerializer):
         return user
 
 
-class UserBlackListSerializer(serializers.ModelSerializer):
+class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'phone', 'email', 'is_blacklist']

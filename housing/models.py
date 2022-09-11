@@ -3,7 +3,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-
 User = settings.AUTH_USER_MODEL
 
 
@@ -78,6 +77,10 @@ class ResidentialComplex(models.Model):
         validators=[MinValueValidator(2.0), MaxValueValidator(5.0)]
     )
     gas = models.BooleanField(_('Газ'), default=True)
+    corpus = models.PositiveIntegerField(_('Корпус'), null=True)
+    section = models.PositiveIntegerField(_('Секция'), null=True)
+    floor = models.PositiveIntegerField(_('Этаж'), null=True)
+    riser = models.PositiveIntegerField(_('Cтояк'), null=True)
     status = models.CharField(
         _('Статус ЖК'),
         max_length=18,
@@ -134,6 +137,15 @@ class ResidentialComplex(models.Model):
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_residential_complex')
 
+    class Meta:
+        ordering = ('id',)
+
+    @property
+    def preview_image(self):
+        obj = self.gallery_residential_complex.first()
+        if obj:
+            return obj.image
+
 
 class RegistrationAndPayment(models.Model):
     formalization = models.CharField(_('Оформление'), max_length=150)
@@ -170,13 +182,12 @@ class GalleryResidentialComplex(models.Model):
     )
 
     class Meta:
-        ordering = ('order', )
+        ordering = ('order',)
 
 
 class Document(models.Model):
     name = models.CharField(max_length=50)
     file = models.FileField(upload_to='files/housing/document')
     residential_complex = models.ForeignKey(ResidentialComplex, on_delete=models.CASCADE, related_name='document')
-
 
 # endregion models for App

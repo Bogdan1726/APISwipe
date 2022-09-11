@@ -17,6 +17,5 @@ def deactivate_announcement_advertising():
               list(advertising.values_list('announcement__creator__email', flat=True)),
               fail_silently=False
               )
-    print(list(advertising.values_list('announcement__creator__email', flat=True)))
     advertising.update(is_active=False)
     print('task "deactivate_announcement_advertising" complete')

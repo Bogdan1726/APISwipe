@@ -1,5 +1,6 @@
 from housing.models import ResidentialComplex
 from users.models import Contact, Subscription
+from random import choice
 
 
 def create_agent(instance):
@@ -26,6 +27,9 @@ def create_residential_complex(instance):
         map_lon=30.738351206725632,
         distance=0,
         ceiling_height=2.5,
-        user=instance
+        user=instance,
+        corpus=choice([2, 4, 6]),
+        section=choice([2, 4]),
+        floor=choice([9, 12, 16]),
+        riser=choice([4, 8])
     )
-

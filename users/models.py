@@ -3,6 +3,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import PermissionsMixin
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+
 from ads.models import Announcement, AnnouncementPurpose, AnnouncementPaymentOptions, AnnouncementDecoration
 from housing.models import ResidentialComplex
 from users.managers import CustomUserManager
@@ -69,7 +71,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     favorites_announcement = models.ManyToManyField(
         Announcement,
         related_name='favorite_announcement',
-        blank=True
+        blank=True,
     )
 
     objects = CustomUserManager()
@@ -155,6 +157,12 @@ class MessageFile(models.Model):
 
 
 class Filter(models.Model):
+    class TypeFilter(models.TextChoices):
+        ALL = 'Все', _('Все')
+        NEW = 'Новостройки', _('Новостройки')
+        SECONDARY = 'Вторичный рынок', _('Вторичный рынок')
+        COTTAGES = 'Коттеджи', _('Коттеджи')
+
     status_house = models.BooleanField(_('Статус дома'), default=True)
     district = models.CharField(_('Район'), max_length=150)
     microdistrict = models.CharField(_('Микрорайон'), max_length=150)
@@ -165,7 +173,12 @@ class Filter(models.Model):
     price_end = models.PositiveIntegerField()
     area_start = models.PositiveIntegerField()
     area_end = models.PositiveIntegerField()
-    type_housing = models.CharField(_('Вид недвижимости'), max_length=20)
+    type_housing = models.CharField(
+        _('Вид недвижимости'),
+        choices=TypeFilter.choices,
+        default=TypeFilter.ALL,
+        max_length=20
+    )
     purpose = models.CharField(
         _('Назначение'),
         max_length=26,
@@ -188,5 +201,17 @@ class Filter(models.Model):
         User, on_delete=models.CASCADE, related_name='user_filter', null=True, blank=True
     )
 
+    class Meta:
+        ordering = ('id',)
 
-
+    def save(self, *args, **kwargs):
+        try:
+            obj = self._meta.model.objects.get(user=self.user, type_housing=self.type_housing)
+        except self._meta.model.DoesNotExist:
+            return super().save(*args, **kwargs)
+        if self.id and obj.id == self.id:
+            return super().save(*args, **kwargs)
+        else:
+            raise serializers.ValidationError(
+                {'unique_custom': 'user with type housing already exists'}
+            )

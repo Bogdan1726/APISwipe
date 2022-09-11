@@ -14,30 +14,51 @@ migrate:
 superuser:
 	$(MANAGE) createsuperuser
 
+test:
+	$(MANAGE) test
+
+
 # Celery
 start_worker:
 	celery -A $(PROJECT) worker -l info
 
+
 start_beat:
 	celery -A $(PROJECT) beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+#
+
+# management commands
+generate_builder_users:
+	$(MANAGE) generate_builder_users
+
+generate_test_users:
+	$(MANAGE) generate_test_users
+
+generate_test_ads:
+	$(MANAGE) generate_test_ads
+
+create_superuser:
+	$(MANAGE) create_superuser
+#
 
 # endregion local
 
 
-
 # Docker
 
-#start_worker:
-#	celery -A myhause24 worker -l info
-#
-#start_app:
-#	$(MANAGE) migrate --no-input
-#	$(MANAGE) loaddata dump.json
-#	$(MANAGE) collectstatic --no-input
-#	gunicorn myhause24.wsgi:application --bind 0.0.0.0:8000
+start_celery_worker:
+	celery -A $(PROJECT) worker -l info
+	celery -A $(PROJECT) beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
-#shell:
-#	docker exec -it container_cinema python manage.py shell
+start_app:
+	$(MANAGE) migrate --no-input
+	$(MANAGE) collectstatic --no-input
+	$(MANAGE) generate_test_users
+	$(MANAGE) generate_builder_users
+	$(MANAGE) generate_test_ads
+	$(MANAGE) create_superuser
+	gunicorn swipe.wsgi:application --bind 0.0.0.0:8000
+
+
+
 #
-#dump_data:
-#	docker exec -it container_cinema python manage.py loaddata db.json

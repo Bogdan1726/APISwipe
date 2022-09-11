@@ -9,18 +9,18 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from drf_psq import PsqMixin, Rule, psq
+from drf_psq import PsqMixin, Rule
 from rest_framework.viewsets import GenericViewSet
-
 from .permissions import IsMyFilter
 from .services.month_ahead import get_range_month
 from .models import (
     Notary, Contact, Subscription, Message, Filter
 )
 from .serializers import (
-    NotarySerializer, UserProfileSerializer, UserAgentSerializer, UserSubscriptionSerializer,
-    MessageSerializer, FilterSerializer, UserNotificationSerializer, UserPerAgentSerializer,
-    UserAutoRenewalSubscriptionSerializer, UserBlackListSerializer
+    NotarySerializer, UserProfileSerializer, UserAgentSerializer,
+    UserSubscriptionSerializer, MessageSerializer, FilterSerializer,
+    UserNotificationSerializer, UserPerAgentSerializer,
+    UserAutoRenewalSubscriptionSerializer, UserListSerializer
 )
 
 User = get_user_model()
@@ -28,12 +28,20 @@ User = get_user_model()
 
 # Create your views here.
 
-class FilterViewSet(PsqMixin, viewsets.ModelViewSet):
+class FilterViewSet(PsqMixin,
+                    mixins.CreateModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,
+                    mixins.ListModelMixin,
+                    GenericViewSet
+                    ):
     serializer_class = FilterSerializer
-    permission_classes = [IsAuthenticated, IsMyFilter]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    http_method_names = ['get', 'post', 'put']
 
     psq_rules = {
-        ('create',): [Rule([IsAuthenticated])]
+        ('update', 'retrieve'): [Rule([IsMyFilter])]
     }
 
     def get_queryset(self):
@@ -45,6 +53,8 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     serializer_class = NotarySerializer
     queryset = Notary.objects.all()
+    parser_classes = [MultiPartParser]
+    http_method_names = ['get', 'post', 'put', 'delete']
 
     psq_rules = {
         ('list', 'retrieve'): [Rule([IsAuthenticated])]
@@ -127,11 +137,12 @@ class UserProfileViewSet(viewsets.ViewSet):
 class UserAgentViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserAgentSerializer
+    parser_classes = [MultiPartParser]
 
     @extend_schema(description='Get agent data', methods=["GET"])
     @action(detail=False)
     def get_agent(self, request):
-        obj = get_object_or_404(Contact, users=request.user)
+        obj = get_object_or_404(Contact, user=request.user)
         serializer = self.serializer_class(obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -202,20 +213,19 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class UserBlackListViewSet(PsqMixin,
-                           mixins.CreateModelMixin,
-                           mixins.RetrieveModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.DestroyModelMixin,
-                           mixins.ListModelMixin,
-                           GenericViewSet):
+class UserListViewSet(PsqMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.UpdateModelMixin,
+                      mixins.ListModelMixin,
+                      GenericViewSet):
     queryset = User.objects.all()
-    serializer_class = UserBlackListSerializer
+    serializer_class = UserListSerializer
     permission_classes = [IsAdminUser]
     parser_classes = [JSONParser]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['is_blacklist']
     search_fields = ['id', 'first_name', 'last_name', 'phone', 'email']
+    http_method_names = ['get', 'post', 'put']
 
     def get_queryset(self):
         queryset = User.objects.filter(is_staff=False, is_developer=False)
