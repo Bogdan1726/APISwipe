@@ -46,9 +46,13 @@ create_superuser:
 
 # Docker
 
-start_celery_worker:
+start_worker:
 	celery -A $(PROJECT) worker -l info
+
+
+start_beat:
 	celery -A $(PROJECT) beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
 
 start_app:
 	$(MANAGE) migrate --no-input

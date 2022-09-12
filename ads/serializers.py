@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
+
 from housing.models import ResidentialComplex
 from users.services.month_ahead import get_range_month
 from .models import (
@@ -108,18 +110,32 @@ class ApartmentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'price_to_meter', 'announcement'
         ]
+        extra_kwargs = {
+            'corpus': {'required': True},
+            'section': {'required': True},
+            'floor': {'required': True},
+            'riser': {'required': True},
+        }
 
     def validate(self, data):
         errors = []
         residential_complex = self.instance.announcement.residential_complex
-        if 'corpus' in data and data['corpus'] > residential_complex.corpus:
-            errors.append({'corpus_error': f"В жилом комплексе нет {data['corpus']}-го корпуса"})
-        if 'section' in data and data['section'] > residential_complex.section:
-            errors.append({'section_error': f"В жилом комплексе нет {data['section']}-й секции"})
-        if 'floor' in data and data['floor'] > residential_complex.floor:
-            errors.append({'floor_error': f"В жилом комплексе нет {data['floor']}-го этажа"})
-        if 'riser' in data and data['riser'] > residential_complex.riser:
-            errors.append({'riser_error': f"В жилом комплексе нет {data['riser']}-го стояка"})
+        number, corpus, section = data['number'], data['corpus'], data['section']
+        floor, riser = data['floor'], data['riser']
+        obj = Apartment.objects.filter(number=number, corpus=corpus, section=section, floor=floor, is_booked=True,
+                                       announcement__residential_complex=residential_complex).first()
+        if obj and self.instance.id != obj.id:
+            errors.append({
+                'unique_number': f"В {data['section']} секции данного ЖК есть квартира №{data['number']}"
+            })
+        if corpus > residential_complex.corpus:
+            errors.append({'corpus_error': f"В жилом комплексе нет {corpus}-го корпуса"})
+        if section > residential_complex.section:
+            errors.append({'section_error': f"В жилом комплексе нет {section}-й секции"})
+        if floor > residential_complex.floor:
+            errors.append({'floor_error': f"В жилом комплексе нет {floor}-го этажа"})
+        if riser > residential_complex.riser:
+            errors.append({'riser_error': f"В жилом комплексе нет {riser}-го стояка"})
         if errors:
             raise serializers.ValidationError(errors)
         return data

@@ -164,9 +164,6 @@ class Apartment(models.Model):
     is_booked = models.BooleanField(default=False)
     announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE, related_name='announcement_apartment')
 
-    class Meta:
-        unique_together = [['corpus', 'number']]
-
     def __str__(self):
         return f'{self.number}'
 
