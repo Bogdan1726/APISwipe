@@ -43,14 +43,23 @@ services:
     restart: always
     build:
       context: .
-    command: make start_celery_worker
-    ports:
-      - "587:587"
+    command: make start_worker
     env_file:
       - .env
     depends_on:
       - web
       - redis
+
+  celery-beat:
+    restart: always
+    build:
+      context: .
+    command: make start_beat
+    env_file:
+      - .env
+    depends_on:
+      -   celery
+
 
 volumes:
   static_volume:
