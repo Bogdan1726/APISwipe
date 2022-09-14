@@ -164,26 +164,25 @@ class Filter(models.Model):
         COTTAGES = 'Коттеджи', _('Коттеджи')
 
     status_house = models.BooleanField(_('Статус дома'), default=True)
-    district = models.CharField(_('Район'), max_length=150)
-    microdistrict = models.CharField(_('Микрорайон'), max_length=150)
+    district = models.CharField(_('Район'), max_length=150, blank=True)
+    microdistrict = models.CharField(_('Микрорайон'), max_length=150, blank=True)
     rooms = models.PositiveIntegerField(
-        _('Количество комнат'), validators=[MinValueValidator(1), MaxValueValidator(10)]
+        _('Количество комнат'), validators=[MinValueValidator(1), MaxValueValidator(10)], blank=True, null=True
     )
-    price_start = models.PositiveIntegerField()
-    price_end = models.PositiveIntegerField()
-    area_start = models.PositiveIntegerField()
-    area_end = models.PositiveIntegerField()
+    price_start = models.PositiveIntegerField(blank=True, null=True)
+    price_end = models.PositiveIntegerField(blank=True, null=True)
+    area_start = models.PositiveIntegerField(blank=True, null=True)
+    area_end = models.PositiveIntegerField(blank=True, null=True)
     type_housing = models.CharField(
         _('Вид недвижимости'),
         choices=TypeFilter.choices,
-        default=TypeFilter.ALL,
         max_length=20
     )
     purpose = models.CharField(
         _('Назначение'),
         max_length=26,
         choices=AnnouncementPurpose.choices,
-        default=AnnouncementPurpose.FLAT
+        default=AnnouncementPurpose.FLAT,
     )
     payment_options = models.CharField(
         _('Условия покупки'),

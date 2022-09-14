@@ -122,7 +122,7 @@ class ApartmentSerializer(serializers.ModelSerializer):
         residential_complex = self.instance.announcement.residential_complex
         number, corpus, section = data['number'], data['corpus'], data['section']
         floor, riser = data['floor'], data['riser']
-        obj = Apartment.objects.filter(number=number, corpus=corpus, section=section, floor=floor, is_booked=True,
+        obj = Apartment.objects.filter(number=number, corpus=corpus, section=section, is_booked=True,
                                        announcement__residential_complex=residential_complex).first()
         if obj and self.instance.id != obj.id:
             errors.append({
