@@ -22,14 +22,18 @@ class FilterSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
     def validate(self, data):
-        if data['area_start'] >= data['area_end']:
-            raise serializers.ValidationError(
-                {'error_area': 'area_start >= area_end'}
-            )
-        if data['price_start'] >= data['price_end']:
-            raise serializers.ValidationError(
-                {'error_price': 'price_start >= price_end'}
-            )
+        if 'area_start' in data and data['area_start'] is not None:
+            if 'area_end' in data and data['area_end'] is not None:
+                if data['area_start'] >= data['area_end']:
+                    raise serializers.ValidationError(
+                        {'error_area': 'area_start >= area_end'}
+                    )
+        if 'price_start' in data and data['price_start'] is not None:
+            if 'price_end' in data and data['price_end'] is not None:
+                if data['price_start'] >= data['price_end']:
+                    raise serializers.ValidationError(
+                        {'error_price': 'price_start >= price_end'}
+                    )
         return data
 
     def create(self, validated_data):
