@@ -5,7 +5,7 @@ from rest_framework import mixins, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -70,7 +70,7 @@ class AnnouncementListViewSet(PsqMixin,
         )
 
     @extend_schema(description='get my announcement', methods=["GET"])
-    @action(detail=False)
+    @action(detail=False, serializer_class=AnnouncementRetrieveSerializer)
     def get_my_announcement(self, request):
         queryset = self.get_queryset().filter(creator=request.user)
         serializer = self.serializer_class(queryset, many=True)
@@ -85,7 +85,7 @@ class AnnouncementViewSet(PsqMixin,
                           GenericViewSet):
     serializer_class = AnnouncementSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, FormParser]
     queryset = Announcement.objects.all()
     http_method_names = ['post', 'put', 'delete']
 
