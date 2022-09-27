@@ -6,7 +6,7 @@ from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
-from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule
@@ -95,7 +95,7 @@ class MessageViewSet(mixins.CreateModelMixin,
 class UserProfileViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(description='Get user data', methods=["GET"])
     @action(detail=False)
