@@ -72,7 +72,9 @@ class AnnouncementListViewSet(PsqMixin,
     @extend_schema(description='get my announcement', methods=["GET"])
     @action(detail=False, serializer_class=AnnouncementRetrieveSerializer)
     def get_my_announcement(self, request):
-        queryset = self.get_queryset().filter(creator=request.user)
+        queryset = Announcement.objects.filter(creator=request.user).select_related(
+            'creator', 'residential_complex', 'advertising', 'announcement_apartment'
+        ).prefetch_related('favorite_announcement', 'gallery_announcement').order_by('id')
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
