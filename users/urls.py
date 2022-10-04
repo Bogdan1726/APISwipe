@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import (
     NotaryViewSet, UserProfileViewSet,
     UserAgentViewSet, UserSubscriptionViewSet,
-    MessageViewSet, FilterViewSet, UserListViewSet
+    MessageViewSet, FilterViewSet, UserListViewSet, success_email_verify
 )
 
 app_name = 'users'
@@ -23,4 +23,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('login/', LoginView.as_view(), name='rest_login'),
     path('registration/', RegisterView.as_view(), name='rest_register'),
+    path('success-email-verify/', success_email_verify, name='success-email-verify')
 ]

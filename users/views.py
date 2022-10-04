@@ -3,11 +3,11 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, mixins
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from drf_psq import PsqMixin, Rule
 from rest_framework.viewsets import GenericViewSet
@@ -230,3 +230,10 @@ class UserListViewSet(PsqMixin,
     def get_queryset(self):
         queryset = User.objects.filter(is_staff=False, is_developer=False)
         return queryset
+
+
+@api_view(['GET'])
+@permission_classes((AllowAny,))
+def success_email_verify(request):
+    return Response('Подтверждения электронной почты выполнено успешно')
+
