@@ -45,7 +45,7 @@ class AnnouncementListViewSet(PsqMixin,
     }
 
     def get_queryset(self):
-        return Announcement.objects.filter(is_moderation_check=True).select_related(
+        return Announcement.objects.all().select_related(
             'creator', 'residential_complex', 'advertising', 'announcement_apartment'
         ).prefetch_related('favorite_announcement', 'gallery_announcement').order_by('id')
 
