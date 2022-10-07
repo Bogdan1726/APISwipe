@@ -175,7 +175,8 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'preview_image', 'address', 'area', 'price',
             'rooms', 'creator', 'advertising', 'announcement_apartment',
-            'favorite_announcement'
+            'favorite_announcement', 'condition', 'payment_options',
+            'residential_complex'
         ]
 
 
@@ -241,7 +242,7 @@ class AnnouncementUpdateSerializer(AnnouncementSerializer):
 class AnnouncementComplaintSerializer(serializers.ModelSerializer):
     class Meta:
         model = Complaint
-        fields = ['announcement', 'date_created', 'creator']
+        fields = ['id', 'announcement', 'date_created', 'creator']
         read_only_fields = ['date_created', 'creator']
 
     def create(self, validated_data):

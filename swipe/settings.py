@@ -153,29 +153,29 @@ INTERNAL_IPS = [
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': env('DATABASE_NAME'),
-#         'USER': env('DATABASE_USER'),
-#         'PASSWORD': env('DATABASE_PASS'),
-#         'HOST': env('HOST'),
-#         'PORT': env('PORT'),
-#         'ATOMIC_REQUEST': True,
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env('DATABASE_NAME_PROD'),
-        'USER': env('DATABASE_USER_PROD'),
-        'PASSWORD': env('DATABASE_PASS_PROD'),
-        'HOST': env('HOST_PROD'),
-        'PORT': env('PORT_PROD'),
+        'NAME': env('DATABASE_NAME'),
+        'USER': env('DATABASE_USER'),
+        'PASSWORD': env('DATABASE_PASS'),
+        'HOST': env('HOST'),
+        'PORT': env('PORT'),
         'ATOMIC_REQUEST': True,
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': env('DATABASE_NAME_PROD'),
+#         'USER': env('DATABASE_USER_PROD'),
+#         'PASSWORD': env('DATABASE_PASS_PROD'),
+#         'HOST': env('HOST_PROD'),
+#         'PORT': env('PORT_PROD'),
+#         'ATOMIC_REQUEST': True,
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

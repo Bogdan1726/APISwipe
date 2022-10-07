@@ -28,6 +28,7 @@ User = get_user_model()
 
 # Create your views here.
 
+@extend_schema(description='Permissions: [IsMyFilter, IsAuthenticated]')
 class FilterViewSet(PsqMixin,
                     mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
@@ -49,6 +50,8 @@ class FilterViewSet(PsqMixin,
         return queryset
 
 
+@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['PUT', 'POST', 'DELETE'], description='Permissions: IsAdminUser')
 class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     serializer_class = NotarySerializer
@@ -59,6 +62,17 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
     psq_rules = {
         ('list', 'retrieve'): [Rule([IsAuthenticated])]
     }
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            data={
+                'message': 'Delete notary success',
+                'status': status.HTTP_200_OK
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 @extend_schema(
@@ -71,6 +85,7 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
         )
     ]
 )
+@extend_schema(description='Permissions: IsAuthenticated')
 class MessageViewSet(mixins.CreateModelMixin,
                      mixins.ListModelMixin,
                      GenericViewSet):
@@ -97,13 +112,13 @@ class UserProfileViewSet(viewsets.ViewSet):
     serializer_class = UserProfileSerializer
     parser_classes = [MultiPartParser, FormParser]
 
-    @extend_schema(description='Get user data', methods=["GET"])
+    @extend_schema(description='Get user data, Permissions: IsAuthenticated', methods=["GET"])
     @action(detail=False)
     def get_profile(self, request):
         serializer = self.serializer_class(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Update user data', methods=["PUT"])
+    @extend_schema(description='Update user data, Permissions: IsAuthenticated', methods=["PUT"])
     @action(detail=False, methods=['PUT'])
     def update_profile(self, request):
         serializer = self.serializer_class(
@@ -113,7 +128,7 @@ class UserProfileViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Update user notification', methods=["PUT"])
+    @extend_schema(description='Update user notification, Permissions: IsAuthenticated', methods=["PUT"])
     @action(detail=False, methods=['PUT'], serializer_class=UserNotificationSerializer)
     def update_notification(self, request):
         serializer = self.serializer_class(
@@ -123,7 +138,7 @@ class UserProfileViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Switch calls and messages per agent', methods=["PUT"])
+    @extend_schema(description='Switch calls and messages per agent, Permissions: IsAuthenticated', methods=["PUT"])
     @action(detail=False, methods=['PUT'], serializer_class=UserPerAgentSerializer)
     def switch_to_agent(self, request):
         serializer = self.serializer_class(
@@ -139,14 +154,14 @@ class UserAgentViewSet(viewsets.ViewSet):
     serializer_class = UserAgentSerializer
     parser_classes = [MultiPartParser]
 
-    @extend_schema(description='Get agent data', methods=["GET"])
+    @extend_schema(description='Get agent data, Permissions: IsAuthenticated', methods=["GET"])
     @action(detail=False)
     def get_agent(self, request):
         obj = get_object_or_404(Contact, user=request.user)
         serializer = self.serializer_class(obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Update agent data', methods=["PUT"])
+    @extend_schema(description='Update agent data, Permissions: IsAuthenticated', methods=["PUT"])
     @action(detail=False, methods=['PUT'])
     def update_agent(self, request):
         obj = get_object_or_404(Contact, user=request.user)
@@ -160,14 +175,14 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSubscriptionSerializer
 
-    @extend_schema(description='Get subscription', methods=['GET'])
+    @extend_schema(description='Get subscription, Permissions: IsAuthenticated', methods=['GET'])
     @action(detail=False)
     def get_subscription(self, request):
         obj = get_object_or_404(Subscription, user=request.user)
         serializer = self.serializer_class(obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Activate not active subscription', methods=['PUT'])
+    @extend_schema(description='Activate not active subscription, Permissions: IsAuthenticated', methods=['PUT'])
     @action(detail=False, methods=['PUT'])
     def active_subscription(self, request):
         obj = get_object_or_404(
@@ -183,7 +198,7 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Renew your subscription', methods=['PUT'])
+    @extend_schema(description='Renew your subscription, Permissions: IsAuthenticated', methods=['PUT'])
     @action(detail=False, methods=['PUT'])
     def update_subscription(self, request):
         obj = get_object_or_404(
@@ -197,7 +212,8 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(description='Enable or disable auto-renewal of a subscription', methods=['PUT'])
+    @extend_schema(description='Enable or disable auto-renewal of a subscription, Permissions: IsAuthenticated',
+                   methods=['PUT'])
     @action(
         detail=False,
         methods=['PUT'],
@@ -213,6 +229,7 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(description='Permissions: IsAdminUser')
 class UserListViewSet(PsqMixin,
                       mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
@@ -236,4 +253,3 @@ class UserListViewSet(PsqMixin,
 @permission_classes((AllowAny,))
 def success_email_verify(request):
     return Response('Подтверждения электронной почты выполнено успешно')
-
