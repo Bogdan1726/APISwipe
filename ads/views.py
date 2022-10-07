@@ -29,7 +29,7 @@ User = get_user_model()
 
 # Create your views here.
 
-@extend_schema(tags=['announcement-feed'])
+@extend_schema(tags=['announcement-feed'], description='Permission: IsAuthenticated')
 class AnnouncementListViewSet(PsqMixin,
                               mixins.RetrieveModelMixin,
                               mixins.ListModelMixin,
@@ -69,7 +69,7 @@ class AnnouncementListViewSet(PsqMixin,
             status=status.HTTP_200_OK
         )
 
-    @extend_schema(description='get my announcement', methods=["GET"])
+    @extend_schema(description='Get my announcements, Permission: IsAuthenticated', methods=["GET"])
     @action(detail=False, serializer_class=AnnouncementRetrieveSerializer)
     def get_my_announcement(self, request):
         queryset = Announcement.objects.filter(creator=request.user).select_related(
@@ -80,6 +80,8 @@ class AnnouncementListViewSet(PsqMixin,
 
 
 @extend_schema(tags=['announcement'])
+@extend_schema(methods=['POST'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['PUT', 'DELETE'], description='Permissions: [IsMyAnnouncement, IsAdminUser]')
 class AnnouncementViewSet(PsqMixin,
                           mixins.CreateModelMixin,
                           mixins.UpdateModelMixin,
@@ -98,8 +100,19 @@ class AnnouncementViewSet(PsqMixin,
         ]
     }
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            data={
+                'message': 'Delete announcement success',
+                'status': status.HTTP_200_OK
+            },
+            status=status.HTTP_200_OK
+        )
 
-@extend_schema(tags=['announcement-moderation'])
+
+@extend_schema(tags=['announcement-moderation'], description='Permissions: IsAdminUser')
 class AnnouncementModerationViewSet(mixins.UpdateModelMixin,
                                     mixins.ListModelMixin,
                                     GenericViewSet):
@@ -114,6 +127,8 @@ class AnnouncementModerationViewSet(mixins.UpdateModelMixin,
 
 
 @extend_schema(tags=['announcement-complaint'])
+@extend_schema(methods=['POST'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['GET', 'DELETE'], description='Permissions: IsAdminUser')
 class AnnouncementComplaintViewSet(PsqMixin,
                                    mixins.CreateModelMixin,
                                    mixins.RetrieveModelMixin,
@@ -132,8 +147,19 @@ class AnnouncementComplaintViewSet(PsqMixin,
         ]
     }
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            data={
+                'message': 'Delete announcement-complaint success',
+                'status': status.HTTP_200_OK
+            },
+            status=status.HTTP_200_OK
+        )
 
-@extend_schema(tags=['announcement-advertising'])
+
+@extend_schema(tags=['announcement-advertising'], description='Permissions: [IsAdminUser, IsMyAdvertising]')
 class AnnouncementAdvertisingViewSet(PsqMixin,
                                      mixins.RetrieveModelMixin,
                                      mixins.UpdateModelMixin,
@@ -152,7 +178,7 @@ class AnnouncementAdvertisingViewSet(PsqMixin,
     }
 
 
-@extend_schema(tags=['announcement-favorites'])
+@extend_schema(tags=['announcement-favorites'], description='Permissions: IsAuthenticated')
 @extend_schema(
     methods=['POST', "DELETE"],
     parameters=[
@@ -169,7 +195,7 @@ class FavoritesAnnouncementViewSet(mixins.CreateModelMixin,
     serializer_class = UserFavoritesAnnouncementSerializer
     queryset = User.objects.all()
 
-    @extend_schema(description='Get favorites apartments', methods=["GET"])
+    @extend_schema(description='Get favorites apartments, Permissions: IsAuthenticated', methods=["GET"])
     @action(detail=False)
     def get(self, request):
         serializer = self.serializer_class(request.user)
@@ -181,20 +207,31 @@ class FavoritesAnnouncementViewSet(mixins.CreateModelMixin,
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(description='Deleted apartments from favorites', methods=['DELETE'])
+    @extend_schema(description='Deleted apartments from favorites, Permissions: IsAuthenticated', methods=['DELETE'])
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
         announcement_id = request.query_params.get('announcement_id')
         if Announcement.objects.filter(id=announcement_id).exists():
             obj = get_object_or_404(Announcement, id=announcement_id)
-            request.user.favorites_announcement.remove(obj)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            if request.user.favorites_announcement.filter(id=obj.id).exists():
+                request.user.favorites_announcement.remove(obj)
+                return Response(
+                    data={
+                        'message': 'Delete announcement favorites success',
+                        'status': status.HTTP_200_OK
+                    },
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(tags=['apartment'])
+@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['PUT'], description='Permissions: [IsMyApartment, IsAdminUser]')
 class ApartmentViewSet(PsqMixin,
                        mixins.RetrieveModelMixin,
                        mixins.UpdateModelMixin,

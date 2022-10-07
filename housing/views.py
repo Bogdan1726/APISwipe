@@ -25,6 +25,8 @@ User = get_user_model()
 
 
 @extend_schema(tags=['residential-complex'])
+@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['PUT'], description='Permissions: [IsMyResidentialComplex, IsAdminUser]')
 class ResidentialComplexViewSet(PsqMixin,
                                 mixins.RetrieveModelMixin,
                                 mixins.UpdateModelMixin,
@@ -48,7 +50,7 @@ class ResidentialComplexViewSet(PsqMixin,
         ]
     }
 
-    @extend_schema(description='get my residential complex', methods=["GET"])
+    @extend_schema(description='Get my residential complex, Permissions: IsMyResidentialComplex', methods=["GET"])
     @action(detail=False, permission_classes=[IsMyResidentialComplex])
     def get_my_complex(self, request):
         obj = get_object_or_404(ResidentialComplex, user=request.user)
@@ -57,6 +59,9 @@ class ResidentialComplexViewSet(PsqMixin,
 
 
 @extend_schema(tags=['residential-complex-news'])
+@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['POST'], description='Permissions: [IsAdminUser, IsDeveloper]')
+@extend_schema(methods=['PUT', 'DELETE'], description='Permissions: [IsAdminUser, IsMyResidentialComplexObject]')
 class ResidentialComplexNewsViewSet(PsqMixin,
                                     mixins.CreateModelMixin,
                                     mixins.RetrieveModelMixin,
@@ -76,8 +81,22 @@ class ResidentialComplexNewsViewSet(PsqMixin,
         ]
     }
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            data={
+                'message': 'Delete news success',
+                'status': status.HTTP_200_OK
+            },
+            status=status.HTTP_200_OK
+        )
+
 
 @extend_schema(tags=['residential-complex-document'])
+@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
+@extend_schema(methods=['POST'], description='Permissions: [IsAdminUser, IsDeveloper]')
+@extend_schema(methods=['PUT', 'DELETE'], description='Permissions: [IsAdminUser, IsMyResidentialComplexObject]')
 class ResidentialComplexDocumentViewSet(PsqMixin,
                                         mixins.CreateModelMixin,
                                         mixins.RetrieveModelMixin,
@@ -97,6 +116,17 @@ class ResidentialComplexDocumentViewSet(PsqMixin,
         ]
     }
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            data={
+                'message': 'Delete document success',
+                'status': status.HTTP_200_OK
+            },
+            status=status.HTTP_200_OK
+        )
+
 
 @extend_schema(tags=['residential-complex-favorites'])
 @extend_schema(
@@ -109,13 +139,14 @@ class ResidentialComplexDocumentViewSet(PsqMixin,
         )
     ]
 )
+@extend_schema(methods=['POST'], description='Permissions: IsAuthenticated')
 class FavoritesResidentialComplexViewSet(mixins.CreateModelMixin,
                                          GenericViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserFavoritesResidentialComplexSerializer
     queryset = User.objects.all()
 
-    @extend_schema(description='Get residential complex favorites', methods=["GET"])
+    @extend_schema(description='Get residential complex favorites, Permissions: IsAuthenticated', methods=["GET"])
     @action(detail=False)
     def get(self, request):
         serializer = self.serializer_class(request.user)
@@ -127,14 +158,23 @@ class FavoritesResidentialComplexViewSet(mixins.CreateModelMixin,
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(description='delete residential complex favorites', methods=['DELETE'])
+    @extend_schema(description='Delete residential complex favorites, Permissions: IsAuthenticated', methods=['DELETE'])
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
         residential_complex_id = request.query_params.get('residential_complex_id')
         if ResidentialComplex.objects.filter(id=residential_complex_id).exists():
             obj = get_object_or_404(ResidentialComplex, id=residential_complex_id)
-            request.user.favorites_residential_complex.remove(obj)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            if request.user.favorites_residential_complex.filter(id=obj.id).exists():
+                request.user.favorites_residential_complex.remove(obj)
+                return Response(
+                    data={
+                        'message': 'Delete residential-complex favorites success',
+                        'status': status.HTTP_200_OK
+                    },
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)

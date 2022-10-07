@@ -83,7 +83,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        if validated_data.get('email') != instance.email:
+        if 'email' in validated_data and validated_data.get('email') != instance.email:
             EmailAddress.objects.filter(user=instance).update(
                 email=validated_data.get('email')
             )
