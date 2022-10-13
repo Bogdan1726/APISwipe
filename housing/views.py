@@ -25,8 +25,9 @@ User = get_user_model()
 
 
 @extend_schema(tags=['residential-complex'])
-@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
-@extend_schema(methods=['PUT'], description='Permissions: [IsMyResidentialComplex, IsAdminUser]')
+@extend_schema(methods=['GET'], description='Get specific residential complex. Permissions: IsAuthenticated')
+@extend_schema(methods=['PUT'],
+               description='Update residential complex. Permissions: [IsMyResidentialComplex, IsAdminUser]')
 class ResidentialComplexViewSet(PsqMixin,
                                 mixins.RetrieveModelMixin,
                                 mixins.UpdateModelMixin,
@@ -59,9 +60,14 @@ class ResidentialComplexViewSet(PsqMixin,
 
 
 @extend_schema(tags=['residential-complex-news'])
-@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
-@extend_schema(methods=['POST'], description='Permissions: [IsAdminUser, IsDeveloper]')
-@extend_schema(methods=['PUT', 'DELETE'], description='Permissions: [IsAdminUser, IsMyResidentialComplexObject]')
+@extend_schema(
+    methods=['GET'], description='Get news for a specific residential complex. Permissions: IsAuthenticated'
+)
+@extend_schema(methods=['POST'], description='Create new news. Permissions: [IsAdminUser, IsDeveloper]')
+@extend_schema(
+    methods=['PUT', 'DELETE'],
+    description='Update and delete news. Permissions: [IsAdminUser, IsMyResidentialComplexObject]'
+)
 class ResidentialComplexNewsViewSet(PsqMixin,
                                     mixins.CreateModelMixin,
                                     mixins.RetrieveModelMixin,
@@ -94,9 +100,14 @@ class ResidentialComplexNewsViewSet(PsqMixin,
 
 
 @extend_schema(tags=['residential-complex-document'])
-@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
-@extend_schema(methods=['POST'], description='Permissions: [IsAdminUser, IsDeveloper]')
-@extend_schema(methods=['PUT', 'DELETE'], description='Permissions: [IsAdminUser, IsMyResidentialComplexObject]')
+@extend_schema(
+    methods=['GET'], description='Get documents for a specific residential complex. Permissions: IsAuthenticated'
+)
+@extend_schema(methods=['POST'], description='Create new document. Permissions: [IsAdminUser, IsDeveloper]')
+@extend_schema(
+    methods=['PUT', 'DELETE'],
+    description='Update and delete document Permissions: [IsAdminUser, IsMyResidentialComplexObject]'
+)
 class ResidentialComplexDocumentViewSet(PsqMixin,
                                         mixins.CreateModelMixin,
                                         mixins.RetrieveModelMixin,
@@ -128,7 +139,7 @@ class ResidentialComplexDocumentViewSet(PsqMixin,
         )
 
 
-@extend_schema(tags=['residential-complex-favorites'])
+@extend_schema(tags=['residential-complex-favorites'], description='Add new complex in favorites')
 @extend_schema(
     methods=['POST', "DELETE"],
     parameters=[
