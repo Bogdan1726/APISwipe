@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -87,6 +87,10 @@ class ResidentialComplexNewsViewSet(PsqMixin,
         ]
     }
 
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Delete news Permissions: [IsAdminUser, IsMyResidentialComplexObject]',
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete news success', 'status': status.HTTP_200_OK})])
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -127,6 +131,11 @@ class ResidentialComplexDocumentViewSet(PsqMixin,
         ]
     }
 
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Delete document  Permissions: [IsAdminUser, IsMyResidentialComplexObject]',
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete document success',
+                                                   'status': status.HTTP_200_OK})])
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -171,7 +180,13 @@ class FavoritesResidentialComplexViewSet(mixins.CreateModelMixin,
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(description='Delete residential complex favorites, Permissions: IsAuthenticated', methods=['DELETE'])
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Delete residential complex favorites, Permissions: IsAuthenticated',
+                   methods=['DELETE'],
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete residential-complex favorites success',
+                                                   'status': status.HTTP_200_OK})]
+                   )
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
         residential_complex_id = request.query_params.get('residential_complex_id')

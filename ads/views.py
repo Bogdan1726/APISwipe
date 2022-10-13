@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_psq import PsqMixin, Rule
 from rest_framework import mixins, status
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
@@ -104,6 +104,11 @@ class AnnouncementViewSet(PsqMixin,
         ]
     }
 
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Delete announcement Permissions: [IsMyAnnouncement, IsAdminUser]',
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete announcement success',
+                                                   'status': status.HTTP_200_OK})])
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -153,6 +158,11 @@ class AnnouncementComplaintViewSet(PsqMixin,
         ]
     }
 
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Delete announcement-complaint Permissions: IsAdminUser',
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete announcement-complaint success',
+                                                   'status': status.HTTP_200_OK})])
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -221,7 +231,13 @@ class FavoritesAnnouncementViewSet(mixins.CreateModelMixin,
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(description='Deleted apartments from favorites, Permissions: IsAuthenticated', methods=['DELETE'])
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Deleted apartments from favorites, Permissions: IsAuthenticated',
+                   methods=['DELETE'],
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete announcement-complaint success',
+                                                   'status': status.HTTP_200_OK})]
+                   )
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
         announcement_id = request.query_params.get('announcement_id')

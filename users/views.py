@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.filters import SearchFilter
@@ -68,6 +68,10 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
         ('list', 'retrieve'): [Rule([IsAuthenticated])]
     }
 
+    @extend_schema(responses=status.HTTP_200_OK,
+                   description='Delete notary Permissions: IsAdminUser',
+                   examples=[OpenApiExample('Example',
+                                            value={'message': 'Delete notary success', 'status': status.HTTP_200_OK})])
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
