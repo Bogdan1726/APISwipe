@@ -29,7 +29,10 @@ User = get_user_model()
 
 # Create your views here.
 
-@extend_schema(tags=['announcement-feed'], description='Permission: IsAuthenticated')
+@extend_schema(
+    tags=['announcement-feed'],
+    description='Ad feed with filtering and getting a specific announcement. Permission: IsAuthenticated'
+)
 class AnnouncementListViewSet(PsqMixin,
                               mixins.RetrieveModelMixin,
                               mixins.ListModelMixin,
@@ -80,8 +83,9 @@ class AnnouncementListViewSet(PsqMixin,
 
 
 @extend_schema(tags=['announcement'])
-@extend_schema(methods=['POST'], description='Permissions: IsAuthenticated')
-@extend_schema(methods=['PUT', 'DELETE'], description='Permissions: [IsMyAnnouncement, IsAdminUser]')
+@extend_schema(methods=['POST'], description='Create new announcement. Permissions: IsAuthenticated')
+@extend_schema(methods=['PUT'], description='Update a announcement. Permissions: [IsMyAnnouncement, IsAdminUser]')
+@extend_schema(methods=['DELETE'], description='Delete announcement. Permissions: [IsMyAnnouncement, IsAdminUser]')
 class AnnouncementViewSet(PsqMixin,
                           mixins.CreateModelMixin,
                           mixins.UpdateModelMixin,
@@ -112,7 +116,9 @@ class AnnouncementViewSet(PsqMixin,
         )
 
 
-@extend_schema(tags=['announcement-moderation'], description='Permissions: IsAdminUser')
+@extend_schema(tags=['announcement-moderation'])
+@extend_schema(methods=['GET'], description='Get announcement for moderations. Permissions: IsAdminUser')
+@extend_schema(methods=['PUT'], description='Moderation a announcement. Permissions: IsAdminUser')
 class AnnouncementModerationViewSet(mixins.UpdateModelMixin,
                                     mixins.ListModelMixin,
                                     GenericViewSet):
@@ -126,7 +132,7 @@ class AnnouncementModerationViewSet(mixins.UpdateModelMixin,
         ).prefetch_related('favorite_announcement', 'gallery_announcement').order_by('id')
 
 
-@extend_schema(tags=['announcement-complaint'])
+@extend_schema(tags=['announcement-complaint'], description='Management a complaints on announcement')
 @extend_schema(methods=['POST'], description='Permissions: IsAuthenticated')
 @extend_schema(methods=['GET', 'DELETE'], description='Permissions: IsAdminUser')
 class AnnouncementComplaintViewSet(PsqMixin,
@@ -159,7 +165,10 @@ class AnnouncementComplaintViewSet(PsqMixin,
         )
 
 
-@extend_schema(tags=['announcement-advertising'], description='Permissions: [IsAdminUser, IsMyAdvertising]')
+@extend_schema(
+    tags=['announcement-advertising'],
+    description='Management a adveresting for announcement. Permissions: [IsAdminUser, IsMyAdvertising]'
+)
 class AnnouncementAdvertisingViewSet(PsqMixin,
                                      mixins.RetrieveModelMixin,
                                      mixins.UpdateModelMixin,
@@ -178,7 +187,10 @@ class AnnouncementAdvertisingViewSet(PsqMixin,
     }
 
 
-@extend_schema(tags=['announcement-favorites'], description='Permissions: IsAuthenticated')
+@extend_schema(
+    tags=['announcement-favorites'],
+    description='Add new announcement in favorites. Permissions: IsAuthenticated'
+)
 @extend_schema(
     methods=['POST', "DELETE"],
     parameters=[
@@ -230,8 +242,14 @@ class FavoritesAnnouncementViewSet(mixins.CreateModelMixin,
 
 
 @extend_schema(tags=['apartment'])
-@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
-@extend_schema(methods=['PUT'], description='Permissions: [IsMyApartment, IsAdminUser]')
+@extend_schema(
+    methods=['GET'],
+    description='Apartments with filtering and getting a specific apartment. Permissions: IsAuthenticated'
+)
+@extend_schema(
+    methods=['PUT'],
+    description='Update and add in in residential complex. Permissions: [IsMyApartment, IsAdminUser]'
+)
 class ApartmentViewSet(PsqMixin,
                        mixins.RetrieveModelMixin,
                        mixins.UpdateModelMixin,

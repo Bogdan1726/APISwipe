@@ -28,7 +28,9 @@ User = get_user_model()
 
 # Create your views here.
 
-@extend_schema(description='Permissions: [IsMyFilter, IsAuthenticated]')
+@extend_schema(
+    description='Management a user filters. Permissions: [IsMyFilter, IsAuthenticated]'
+)
 class FilterViewSet(PsqMixin,
                     mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
@@ -50,8 +52,11 @@ class FilterViewSet(PsqMixin,
         return queryset
 
 
-@extend_schema(methods=['GET'], description='Permissions: IsAuthenticated')
-@extend_schema(methods=['PUT', 'POST', 'DELETE'], description='Permissions: IsAdminUser')
+@extend_schema(methods=['GET'], description='Get list notaries. Permissions: IsAuthenticated')
+@extend_schema(
+    methods=['PUT', 'POST', 'DELETE'],
+    description='Management a notaries(delete, update and create new) Permissions: IsAdminUser'
+)
 class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     serializer_class = NotarySerializer
@@ -85,7 +90,8 @@ class NotaryViewSet(PsqMixin, viewsets.ModelViewSet):
         )
     ]
 )
-@extend_schema(description='Permissions: IsAuthenticated')
+@extend_schema(
+    description='Messaging between users and between the user and technical support. Permissions: IsAuthenticated')
 class MessageViewSet(mixins.CreateModelMixin,
                      mixins.ListModelMixin,
                      GenericViewSet):
@@ -229,7 +235,7 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@extend_schema(description='Permissions: IsAdminUser')
+@extend_schema(description='List all users and filter for user in blacklist. Permissions: IsAdminUser')
 class UserListViewSet(PsqMixin,
                       mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
